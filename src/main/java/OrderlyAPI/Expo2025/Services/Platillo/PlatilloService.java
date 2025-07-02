@@ -1,16 +1,18 @@
 package OrderlyAPI.Expo2025.Services.Platillo;
 
 import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
-import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
-import OrderlyAPI.Expo2025.Exceptions.ExceptionRolNoEncontrado;
+import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.PlatilloDTO;
-import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Platillo.PlatilloRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
+@Service
 public class PlatilloService {
     private PlatilloRepository repo;
 
@@ -31,24 +33,24 @@ public class PlatilloService {
             PlatilloEntity platilloGuardado = repo.save(platilloEntity);
             return convertirAPlatillosDTO(platilloGuardado);
         }catch (Exception e){
-            log.error("Error al registrar rol: " + e.getMessage());
-            throw new ExceptionRolNoEncontrado("Error al registrar el rol" + e.getMessage());
+            log.error("Error al registrar platillo: " + e.getMessage());
+            throw new ExceptionDatoNoEncontrado("Error al registrar el platillo" + e.getMessage());
         }
     }
 
-    public RolDTO updateRol(Long id, RolDTO rol){
-        RolEntity rolExistente = repo.findById(id).orElseThrow(() -> new ExceptionRolNoEncontrado("Rol no encontrado"));
+    public PlatilloDTO updatePlatillo(Long id, PlatilloDTO platillo){
+        PlatilloEntity platilloExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Platillo no encontrado"));
 
-        rolExistente.setRol(rol.getRol());
+        platilloExistente.setNomPlatillo(platillo.getNomPlatillo());
 
-        RolEntity rolActualizado = repo.save(rolExistente);
-        return convertirARolesDTO(rolActualizado);
+        PlatilloEntity platilloActualizado = repo.save(platilloExistente);
+        return convertirAPlatillosDTO(platilloActualizado);
     }
 
-    public boolean deleteRol(Long id){
+    public boolean deletePlatillo(Long id){
         try{
-            RolEntity objRol = repo.findById(id).orElse(null);
-            if (objRol != null){
+            PlatilloEntity objPlatillo = repo.findById(id).orElse(null);
+            if (objPlatillo != null){
                 repo.deleteById(id);
                 return true;
             }else{
@@ -56,7 +58,7 @@ public class PlatilloService {
                 return false;
             }
         }catch (EmptyResultDataAccessException e){
-            throw new EmptyResultDataAccessException("No se encontro rol con ID:" + id + " para eliminar.", 1);
+            throw new EmptyResultDataAccessException("No se encontro platillo con ID:" + id + " para eliminar.", 1);
         }
     }
 

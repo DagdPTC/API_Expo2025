@@ -1,9 +1,7 @@
 package OrderlyAPI.Expo2025.Controller.Rol;
 
-import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatosDuplicados;
-import OrderlyAPI.Expo2025.Exceptions.ExceptionRolNoEncontrado;
-import OrderlyAPI.Expo2025.Models.ApiResponse.APIResponse;
+import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Services.Rol.RolService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -73,7 +71,7 @@ public class RolController {
             return ResponseEntity.ok(rolActualizado);
         }
 
-        catch (ExceptionRolNoEncontrado e){
+        catch (ExceptionDatoNoEncontrado e){
             return ResponseEntity.notFound().build();
         }
 

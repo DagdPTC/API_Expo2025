@@ -1,8 +1,7 @@
 package OrderlyAPI.Expo2025.Services.Rol;
 
 import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
-import OrderlyAPI.Expo2025.Entities.Usuario.UsuarioEntity;
-import OrderlyAPI.Expo2025.Exceptions.ExceptionRolNoEncontrado;
+import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -35,12 +34,12 @@ public class RolService {
             return convertirARolesDTO(rolGuardado);
         }catch (Exception e){
             log.error("Error al registrar rol: " + e.getMessage());
-            throw new ExceptionRolNoEncontrado("Error al registrar el rol" + e.getMessage());
+            throw new ExceptionDatoNoEncontrado("Error al registrar el rol" + e.getMessage());
         }
     }
 
     public RolDTO updateRol(Long id, RolDTO rol){
-        RolEntity rolExistente = repo.findById(id).orElseThrow(() -> new ExceptionRolNoEncontrado("Rol no encontrado"));
+        RolEntity rolExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Rol no encontrado"));
 
         rolExistente.setRol(rol.getRol());
 
@@ -77,7 +76,4 @@ public class RolService {
         dto.setRol(rol.getRol());
         return dto;
     }
-
-
-
 }

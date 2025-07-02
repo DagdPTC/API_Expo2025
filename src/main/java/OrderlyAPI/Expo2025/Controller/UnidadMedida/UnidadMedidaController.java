@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/apiRol")
+@RequestMapping("/apiUnidadMedida")
 public class UnidadMedidaController {
 
     @Autowired
     private UnidadMedidaService service;
 
-    @GetMapping("/getDataRol")
+    @GetMapping("/getDataUnidadMedida")
     public List<UnidadMedidaDTO> getData(){
         return service.getAllUnidadMedidas();
     }
