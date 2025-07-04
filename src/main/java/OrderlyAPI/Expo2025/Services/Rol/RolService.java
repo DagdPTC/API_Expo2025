@@ -54,7 +54,7 @@ public class RolService {
                 repo.deleteById(id);
                 return true;
             }else{
-                System.out.println("Usuario no encontrado");
+                System.out.println("Rol no encontrado");
                 return false;
             }
         }catch (EmptyResultDataAccessException e){

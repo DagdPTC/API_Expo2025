@@ -1,4 +1,7 @@
 package OrderlyAPI.Expo2025.Repositories.PrecioPlatillo;
 
-public interface PrecioPlatilloRepository {
+import OrderlyAPI.Expo2025.Entities.PrecioPlatillo.PrecioPlatilloEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PrecioPlatilloRepository extends JpaRepository<PrecioPlatilloEntity, Long> {
 }
