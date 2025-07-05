@@ -47,7 +47,7 @@ public class RolController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "status", "error",
-                            "message", "Error al registrar usuario",
+                            "message", "Error al registrar",
                             "detail", e.getMessage()
                     ));
         }

@@ -1,13 +1,23 @@
 package OrderlyAPI.Expo2025.Controller.DocumentoIdentidad;
 
+import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
+import OrderlyAPI.Expo2025.Exceptions.ExceptionDatosDuplicados;
 import OrderlyAPI.Expo2025.Models.DTO.DocumentoIdentidadDTO;
+import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Services.DocumentoIdentidad.DocumentoIdentidadService;
+import OrderlyAPI.Expo2025.Services.Rol.RolService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/apiDocumentoIdentidad")
@@ -19,5 +29,84 @@ public class DocumentoIdentidadController {
     @GetMapping("/getDataDocumentoIdentidad")
     public List<DocumentoIdentidadDTO> getData(){
         return service.getAllDocumentosIdentidades();
+    }
+
+
+    @PostMapping("/createDocumentoIdentidad")
+    public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody DocumentoIdentidadDTO documentoIdentidad, HttpServletRequest request){
+        try{
+            DocumentoIdentidadDTO respuesta = service.createDocumentoIdentidad(documentoIdentidad);
+            if (respuesta == null){
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "Inserción incorrecta",
+                        "errorType", "VALIDATION_ERROR",
+                        "message", "Datos del usuario inválidos"
+                ));
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "status","sucess",
+                    "data",respuesta));
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "status", "error",
+                            "message", "Error al registrar",
+                            "detail", e.getMessage()
+                    ));
+        }
+    }
+
+    @PutMapping("/modificarDocumentoIdentidad/{id}")
+    public ResponseEntity<?> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody DocumentoIdentidadDTO documentoIdentidad,
+            BindingResult bindingResult){
+
+        if (bindingResult.hasErrors()){
+            Map<String, String> errores = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error ->
+                    errores.put(error.getField(), error.getDefaultMessage()));
+            return ResponseEntity.badRequest().body(errores);
+        }
+
+        try{
+            DocumentoIdentidadDTO documentoIdentidadActualizado = service.updateDocumentoIdentidad(id, documentoIdentidad);
+            return ResponseEntity.ok(documentoIdentidadActualizado);
+        }
+
+        catch (ExceptionDatoNoEncontrado e){
+            return ResponseEntity.notFound().build();
+        }
+
+        catch (ExceptionDatosDuplicados e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                    Map.of("error", "Datos duplicados", "campo", e.getCampoDuplicado())
+            );
+        }
+    }
+
+    @DeleteMapping("/eliminarDocumentoIdentidad/{id}")
+    public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id){
+        try{
+            if (!service.deleteDocumentoIdentidad(id)){
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .header("X-Mensaje-Error", "Documento Identidad no encontrado")
+                        .body(Map.of(
+                                "error", "Not found",
+                                "mensaje", "El Documento Identidad no ha sido encontrado",
+                                "timestamp", Instant.now().toString()
+                        ));
+            }
+            return ResponseEntity.ok().body(Map.of(
+                    "status", "Proceso completado",
+                    "message", "Documento Identidad eliminado exitosamente"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "status", "Error",
+                    "message", "Error al eliminar el Documento Identidad",
+                    "detail", e.getMessage()
+            ));
+        }
     }
 }
