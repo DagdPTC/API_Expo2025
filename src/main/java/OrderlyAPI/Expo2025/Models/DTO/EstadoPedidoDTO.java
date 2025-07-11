@@ -8,5 +8,4 @@ import lombok.Setter;
 public class EstadoPedidoDTO {
     private Long Id;
     private String NomEstado;
-    private String Descripcion;
 }

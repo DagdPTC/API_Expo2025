@@ -19,8 +19,8 @@ public class PedidoEntity {
     @Id
     @Column(name = "IDPEDIDO")
     private Long Id;
-    @Column(name = "IDCLIENTE")
-    private Long IdCliente;
+    @Column(name = "NOMBRECLIENTE")
+    private String Nombrecliente;
     @Column(name = "IDMESA")
     private Long IdMesa;
     @Column(name = "IDEMPLEADO")

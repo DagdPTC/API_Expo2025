@@ -7,7 +7,6 @@ import lombok.Setter;
 @Getter @Setter @NotBlank
 public class MesaDTO {
     private Long Id;
-    private Long NumMesa;
-    private Long IdUbicacion;
-    private Long CapacidadPersonas;
+    private Long NomMesa;
+    private Long IdTipoMesa;
 }

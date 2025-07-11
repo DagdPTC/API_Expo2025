@@ -45,7 +45,6 @@ public class TipoReservaService {
         TipoReservaEntity tipoReservaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Tipo Reserva no encontrado"));
 
         tipoReservaExistente.setNomTipo(tipoReserva.getNomTipo());
-        tipoReservaExistente.setDescripcion(tipoReserva.getDescripcion());
 
         TipoReservaEntity tipoReservaActualizado = repo.save(tipoReservaExistente);
         return convertirATipoReservasDTO(tipoReservaActualizado);
@@ -71,7 +70,6 @@ public class TipoReservaService {
         TipoReservaEntity dto = new TipoReservaEntity();
         dto.setId(tipoReserva.getId());
         dto.setNomTipo(tipoReserva.getNomTipo());
-        dto.setDescripcion(tipoReserva.getDescripcion());
         return dto;
     }
 
@@ -79,7 +77,6 @@ public class TipoReservaService {
         TipoReservaDTO dto = new TipoReservaDTO();
         dto.setId(tipoReserva.getId());
         dto.setNomTipo(tipoReserva.getNomTipo());
-        dto.setDescripcion(tipoReserva.getDescripcion());
         return dto;
     }
 }

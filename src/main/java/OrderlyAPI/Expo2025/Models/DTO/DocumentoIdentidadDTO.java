@@ -12,5 +12,4 @@ public class DocumentoIdentidadDTO {
     private Long Idpersona;
     private String tipoDoc;
     private String numDoc;
-    private Date fechaExpedicion;
 }

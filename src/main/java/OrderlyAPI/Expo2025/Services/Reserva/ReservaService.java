@@ -28,7 +28,7 @@ public class ReservaService {
     }
 
     public ReservaDTO createReserva(ReservaDTO reservaDTO){
-        if (reservaDTO == null || reservaDTO.getIdCliente() == null || reservaDTO.getIdCliente().describeConstable().isEmpty()){
+        if (reservaDTO == null || reservaDTO.getNomCliente() == null || reservaDTO.getNomCliente().isEmpty()){
             throw new IllegalArgumentException("La reserva no puede ser nulo");
         }
         try{
@@ -44,14 +44,15 @@ public class ReservaService {
     public ReservaDTO updateReserva(Long id, ReservaDTO reserva){
         ReservaEntity reservaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Reserva no encontrado"));
 
-        reservaExistente.setIdCliente(reserva.getIdCliente());
+        reservaExistente.setNomCliente(reserva.getNomCliente());
         reservaExistente.setIdMesa(reserva.getIdMesa());
         reservaExistente.setFReserva(reserva.getFReserva());
-        reservaExistente.setHInicio(reserva.getHFin());
+        reservaExistente.setHora(reserva.getHora());
         reservaExistente.setCantidadPersonas(reserva.getCantidadPersonas());
+        reservaExistente.setEventoespecial(reserva.getEventoespecial());
+        reservaExistente.setMesadiscpo(reserva.getMesadiscpo());
         reservaExistente.setIdTipoReserva(reserva.getIdTipoReserva());
         reservaExistente.setIdEstadoReserva(reserva.getIdEstadoReserva());
-        reservaExistente.setObservaciones(reserva.getObservaciones());
 
         ReservaEntity reservaActualizado = repo.save(reservaExistente);
         return convertirAReservasDTO(reservaActualizado);
@@ -76,30 +77,30 @@ public class ReservaService {
     public ReservaEntity convertirAReservasEntity(ReservaDTO reserva){
         ReservaEntity dto = new ReservaEntity();
         dto.setId(reserva.getId());
-        dto.setIdCliente(reserva.getIdCliente());
+        dto.setNomCliente(reserva.getNomCliente());
         dto.setIdMesa(reserva.getIdMesa());
         dto.setFReserva(reserva.getFReserva());
-        dto.setHInicio(reserva.getHInicio());
-        dto.setHFin(reserva.getHFin());
+        dto.setHora(reserva.getHora());
         dto.setCantidadPersonas(reserva.getCantidadPersonas());
+        dto.setEventoespecial(reserva.getEventoespecial());
+        dto.setMesadiscpo(reserva.getMesadiscpo());
         dto.setIdTipoReserva(reserva.getIdTipoReserva());
         dto.setIdEstadoReserva(reserva.getIdEstadoReserva());
-        dto.setObservaciones(reserva.getObservaciones());
         return dto;
     }
 
     public ReservaDTO convertirAReservasDTO(ReservaEntity reserva){
         ReservaDTO dto = new ReservaDTO();
         dto.setId(reserva.getId());
-        dto.setIdCliente(reserva.getIdCliente());
+        dto.setNomCliente(reserva.getNomCliente());
         dto.setIdMesa(reserva.getIdMesa());
         dto.setFReserva(reserva.getFReserva());
-        dto.setHInicio(reserva.getHInicio());
-        dto.setHFin(reserva.getHFin());
+        dto.setHora(reserva.getHora());
         dto.setCantidadPersonas(reserva.getCantidadPersonas());
+        dto.setEventoespecial(reserva.getEventoespecial());
+        dto.setMesadiscpo(reserva.getMesadiscpo());
         dto.setIdTipoReserva(reserva.getIdTipoReserva());
         dto.setIdEstadoReserva(reserva.getIdEstadoReserva());
-        dto.setObservaciones(reserva.getObservaciones());
         return dto;
     }
 }

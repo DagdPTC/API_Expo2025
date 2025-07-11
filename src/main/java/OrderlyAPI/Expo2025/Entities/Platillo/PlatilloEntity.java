@@ -20,6 +20,8 @@ public class PlatilloEntity {
     private String NomPlatillo;
     @Column(name = "DESCRIPCION")
     private String Descripcion;
+    @Column(name = "PRECIO")
+    private Long Precio;
     @Column(name = "TIEMPOPREPARACION")
     private Long TiempoPreparacion;
 }

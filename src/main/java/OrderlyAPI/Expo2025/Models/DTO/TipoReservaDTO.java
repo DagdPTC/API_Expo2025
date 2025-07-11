@@ -8,5 +8,4 @@ import lombok.Setter;
 public class TipoReservaDTO {
     private Long Id;
     private String NomTipo;
-    private String Descripcion;
 }

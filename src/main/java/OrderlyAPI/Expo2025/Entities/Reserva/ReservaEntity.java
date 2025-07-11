@@ -19,22 +19,22 @@ public class ReservaEntity {
     @Id
     @Column(name = "IDRESERVA")
     private Long Id;
-    @Column(name = "IDCLIENTE")
-    private Long IdCliente;
+    @Column(name = "NOMBRECLIENTE")
+    private String nomCliente;
     @Column(name = "IDMESA")
     private Long IdMesa;
     @Column(name = "FECHARESERVA")
     private Date FReserva;
-    @Column(name = "HORAINICIO")
-    private Timestamp HInicio;
-    @Column(name = "HORAFIN")
-    private Timestamp HFin;
+    @Column(name = "HORA")
+    private Timestamp Hora;
     @Column(name = "CANTIDADPERSONAS")
     private Long CantidadPersonas;
+    @Column(name = "EVENTOESPECIAL")
+    private String Eventoespecial;
+    @Column(name = "MESADISPONIBLE")
+    private String Mesadiscpo;
     @Column(name = "IDTIPORESERVA")
     private Long idTipoReserva;
     @Column(name = "IDESTADORESERVA")
     private Long IdEstadoReserva;
-    @Column(name = "OBSERVACIONES")
-    private String Observaciones;
 }

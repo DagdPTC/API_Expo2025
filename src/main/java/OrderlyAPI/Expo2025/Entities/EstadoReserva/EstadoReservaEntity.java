@@ -18,6 +18,4 @@ public class EstadoReservaEntity {
     private Long Id;
     @Column(name = "NOMBREESTADO")
     private String NomEstado;
-    @Column(name = "DESCRIPCION")
-    private String Descripcion;
 }

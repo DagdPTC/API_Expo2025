@@ -42,6 +42,8 @@ public class PlatilloService {
         PlatilloEntity platilloExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Platillo no encontrado"));
 
         platilloExistente.setNomPlatillo(platillo.getNomPlatillo());
+        platilloExistente.setPrecio(platillo.getPrecio());
+        platilloExistente.setTiempoPreparacion(platillo.getTiempoPreparacion());
 
         PlatilloEntity platilloActualizado = repo.save(platilloExistente);
         return convertirAPlatillosDTO(platilloActualizado);
@@ -68,6 +70,7 @@ public class PlatilloService {
         dto.setId(platillo.getId());
         dto.setNomPlatillo(platillo.getNomPlatillo());
         dto.setDescripcion(platillo.getDescripcion());
+        dto.setPrecio(platillo.getPrecio());
         dto.setTiempoPreparacion(platillo.getTiempoPreparacion());
         return dto;
     }
@@ -77,6 +80,7 @@ public class PlatilloService {
         dto.setId(platillo.getId());
         dto.setNomPlatillo(platillo.getNomPlatillo());
         dto.setDescripcion(platillo.getDescripcion());
+        dto.setPrecio(platillo.getPrecio());
         dto.setTiempoPreparacion(platillo.getTiempoPreparacion());
         return dto;
     }

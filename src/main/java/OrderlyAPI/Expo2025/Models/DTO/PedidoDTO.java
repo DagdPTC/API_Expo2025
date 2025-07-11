@@ -10,7 +10,7 @@ import java.util.Date;
 @Getter @Setter @NotBlank
 public class PedidoDTO {
     private Long Id;
-    private Long IdCliente;
+    private String Nombrecliente;
     private Long IdMesa;
     private Long IdEmpleado;
     private Date FPedido;

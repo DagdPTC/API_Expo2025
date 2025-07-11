@@ -45,7 +45,6 @@ public class EstadoPedidoService {
         EstadoPedidoEntity estadoPedidoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Estado Pedido no encontrado"));
 
         estadoPedidoExistente.setNomEstado(estadoPedido.getNomEstado());
-        estadoPedidoExistente.setDescripcion(estadoPedido.getDescripcion());
 
         EstadoPedidoEntity estadoPedidoActualizado = repo.save(estadoPedidoExistente);
         return convertirAEstadoPedidosDTO(estadoPedidoActualizado);
@@ -71,7 +70,6 @@ public class EstadoPedidoService {
         EstadoPedidoEntity dto = new EstadoPedidoEntity();
         dto.setId(estadoPedido.getId());
         dto.setNomEstado(estadoPedido.getNomEstado());
-        dto.setDescripcion(estadoPedido.getDescripcion());
         return dto;
     }
 
@@ -79,7 +77,6 @@ public class EstadoPedidoService {
         EstadoPedidoDTO dto = new EstadoPedidoDTO();
         dto.setId(estadoPedido.getId());
         dto.setNomEstado(estadoPedido.getNomEstado());
-        dto.setDescripcion(estadoPedido.getDescripcion());
         return dto;
     }
 }

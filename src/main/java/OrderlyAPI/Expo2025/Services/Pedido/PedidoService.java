@@ -28,7 +28,7 @@ public class PedidoService {
     }
 
     public PedidoDTO createPedido(PedidoDTO pedidoDTO){
-        if (pedidoDTO == null || pedidoDTO.getIdCliente() == null || pedidoDTO.getIdCliente().describeConstable().isEmpty()){
+        if (pedidoDTO == null || pedidoDTO.getNombrecliente() == null || pedidoDTO.getNombrecliente().describeConstable().isEmpty()){
             throw new IllegalArgumentException("El pedido no puede ser nulo");
         }
         try{
@@ -44,7 +44,7 @@ public class PedidoService {
     public PedidoDTO updatePedido(Long id, PedidoDTO pedido){
         PedidoEntity pedidoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Pedido no encontrado"));
 
-        pedidoExistente.setIdCliente(pedido.getIdCliente());
+        pedidoExistente.setNombrecliente(pedido.getNombrecliente());
         pedidoExistente.setIdMesa(pedido.getIdMesa());
         pedidoExistente.setIdEmpleado(pedido.getIdEmpleado());
         pedidoExistente.setFPedido(pedido.getFPedido());
@@ -75,7 +75,7 @@ public class PedidoService {
     public PedidoEntity convertirAPedidossEntity(PedidoDTO pedido){
         PedidoEntity dto = new PedidoEntity();
         dto.setId(pedido.getId());
-        dto.setIdCliente(pedido.getIdCliente());
+        dto.setNombrecliente(pedido.getNombrecliente());
         dto.setIdMesa(pedido.getIdMesa());
         dto.setIdEmpleado(pedido.getIdEmpleado());
         dto.setFPedido(pedido.getFPedido());
@@ -88,7 +88,7 @@ public class PedidoService {
     public PedidoDTO convertirAPedidosDTO(PedidoEntity pedido){
         PedidoDTO dto = new PedidoDTO();
         dto.setId(pedido.getId());
-        dto.setIdCliente(pedido.getIdCliente());
+        dto.setNombrecliente(pedido.getNombrecliente());
         dto.setIdMesa(pedido.getIdMesa());
         dto.setIdEmpleado(pedido.getIdEmpleado());
         dto.setFPedido(pedido.getFPedido());

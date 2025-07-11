@@ -10,13 +10,14 @@ import java.util.Date;
 @Getter @Setter @NotBlank
 public class ReservaDTO {
     private Long Id;
-    private Long IdCliente;
+    private String nomCliente;
+    private Number Telefono;
     private Long IdMesa;
     private Date FReserva;
-    private Timestamp HInicio;
-    private Timestamp HFin;
+    private Timestamp Hora;
     private Long CantidadPersonas;
+    private String Eventoespecial;
+    private String Mesadiscpo;
     private Long idTipoReserva;
     private Long IdEstadoReserva;
-    private String Observaciones;
 }

@@ -17,9 +17,7 @@ public class MesaEntity {
     @Column(name = "IDMESA")
     private Long Id;
     @Column(name = "NUMEROMESA")
-    private Long NumMesa;
-    @Column(name = "IDUBICACION")
-    private Long IdUbicacion;
-    @Column(name = "CAPACIDADPERSONAS")
-    private Long CapacidadPersonas;
+    private Long NomMesa;
+    @Column(name = "IDTIPOMESA")
+    private Long IdTipoMesa;
 }

@@ -9,5 +9,6 @@ public class PlatilloDTO {
     private Long Id;
     private String NomPlatillo;
     private String Descripcion;
+    private Long Precio;
     private Long TiempoPreparacion;
 }

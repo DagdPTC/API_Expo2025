@@ -46,7 +46,6 @@ public class EstadoReservaService {
         EstadoReservaEntity estadoReservaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Estado Reserva no encontrado"));
 
         estadoReservaExistente.setNomEstado(estadoReserva.getNomEstado());
-        estadoReservaExistente.setDescripcion(estadoReserva.getDescripcion());
 
         EstadoReservaEntity estadoReservaActualizado = repo.save(estadoReservaExistente);
         return convertirAEstadoReservasDTO(estadoReservaActualizado);
@@ -72,7 +71,6 @@ public class EstadoReservaService {
         EstadoReservaEntity dto = new EstadoReservaEntity();
         dto.setId(estadoReserva.getId());
         dto.setNomEstado(estadoReserva.getNomEstado());
-        dto.setDescripcion(estadoReserva.getDescripcion());
         return dto;
     }
 
@@ -80,7 +78,6 @@ public class EstadoReservaService {
         EstadoReservaDTO dto = new EstadoReservaDTO();
         dto.setId(estadoReserva.getId());
         dto.setNomEstado(estadoReserva.getNomEstado());
-        dto.setDescripcion(estadoReserva.getDescripcion());
         return dto;
     }
 }

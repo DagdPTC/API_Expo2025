@@ -24,6 +24,4 @@ public class DocumentoIdentidadEntity {
     private String tipoDoc;
     @Column(name = "NUMERODOCUMENTO")
     private String numDoc;
-    @Column(name = "FECHAEXPEDICION")
-    private Date fechaExpedicion;
 }

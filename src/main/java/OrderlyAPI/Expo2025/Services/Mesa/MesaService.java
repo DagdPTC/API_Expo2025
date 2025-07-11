@@ -28,7 +28,7 @@ public class MesaService {
     }
 
     public MesaDTO createMesa(MesaDTO mesaDTO){
-        if (mesaDTO == null || mesaDTO.getNumMesa() == null || mesaDTO.getNumMesa().describeConstable().isEmpty()){
+        if (mesaDTO == null || mesaDTO.getNomMesa() == null || mesaDTO.getNomMesa().describeConstable().isEmpty()){
             throw new IllegalArgumentException("La mesa no puede ser nulo");
         }
         try{
@@ -44,9 +44,8 @@ public class MesaService {
     public MesaDTO updateMesa(Long id, MesaDTO mesa){
         MesaEntity mesaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Mesa no encontrado"));
 
-        mesaExistente.setNumMesa(mesa.getNumMesa());
-        mesaExistente.setIdUbicacion(mesa.getIdUbicacion());
-        mesaExistente.setCapacidadPersonas(mesa.getCapacidadPersonas());
+        mesaExistente.setNomMesa(mesa.getNomMesa());
+        mesaExistente.setIdTipoMesa(mesa.getIdTipoMesa());
 
         MesaEntity mesaActualizado = repo.save(mesaExistente);
         return convertirAMesasDTO(mesaActualizado);
@@ -71,18 +70,17 @@ public class MesaService {
     public MesaEntity convertirAMesasEntity(MesaDTO mesa){
         MesaEntity dto = new MesaEntity();
         dto.setId(mesa.getId());
-        dto.setNumMesa(mesa.getNumMesa());
-        dto.setIdUbicacion(mesa.getIdUbicacion());
-        dto.setCapacidadPersonas(mesa.getCapacidadPersonas());
+        dto.setNomMesa(mesa.getNomMesa());
+        dto.setIdTipoMesa(mesa.getIdTipoMesa());
+
         return dto;
     }
 
     public MesaDTO convertirAMesasDTO(MesaEntity mesa){
         MesaDTO dto = new MesaDTO();
         dto.setId(mesa.getId());
-        dto.setNumMesa(mesa.getNumMesa());
-        dto.setIdUbicacion(mesa.getIdUbicacion());
-        dto.setCapacidadPersonas(mesa.getCapacidadPersonas());
+        dto.setNomMesa(mesa.getNomMesa());
+        dto.setIdTipoMesa(mesa.getIdTipoMesa());
         return dto;
     }
 }

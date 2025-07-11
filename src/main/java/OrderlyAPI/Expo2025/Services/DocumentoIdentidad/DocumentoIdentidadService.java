@@ -45,7 +45,6 @@ public class DocumentoIdentidadService {
         documentoIdentidadExistente.setIdpersona(documentoIdentidad.getIdpersona());
         documentoIdentidadExistente.setTipoDoc(documentoIdentidad.getTipoDoc());
         documentoIdentidadExistente.setNumDoc(documentoIdentidad.getNumDoc());
-        documentoIdentidadExistente.setFechaExpedicion(documentoIdentidad.getFechaExpedicion());
 
         DocumentoIdentidadEntity documentoIdentidadActualizado = repo.save(documentoIdentidadExistente);
         return convertirADocumentosIdentidadesDTO(documentoIdentidadActualizado);
@@ -73,7 +72,6 @@ public class DocumentoIdentidadService {
         dto.setIdpersona(documentoIdentidad.getIdpersona());
         dto.setTipoDoc(documentoIdentidad.getTipoDoc());
         dto.setNumDoc(documentoIdentidad.getNumDoc());
-        dto.setFechaExpedicion(documentoIdentidad.getFechaExpedicion());
         return dto;
     }
 
@@ -83,7 +81,6 @@ public class DocumentoIdentidadService {
         dto.setIdpersona(documentoIdentidad.getIdpersona());
         dto.setTipoDoc(documentoIdentidad.getTipoDoc());
         dto.setNumDoc(documentoIdentidad.getNumDoc());
-        dto.setFechaExpedicion(documentoIdentidad.getFechaExpedicion());
         return dto;
     }
 }

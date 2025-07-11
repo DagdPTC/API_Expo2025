@@ -4,11 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
-
 @Getter @Setter @NotBlank
-public class ClienteDTO {
+public class TipoMesaDTO {
     private Long Id;
-    private Long IdPersona;
-    private Date FRegistro;
+    private String Nombre;
+    private Long CapacidadPersonas;
 }
