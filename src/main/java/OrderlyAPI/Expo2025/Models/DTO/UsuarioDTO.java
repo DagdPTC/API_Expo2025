@@ -10,5 +10,5 @@ public class UsuarioDTO {
     private String nombre;
     private String contrasenia;
     private Long rolId;
-
+    private String correo;
 }

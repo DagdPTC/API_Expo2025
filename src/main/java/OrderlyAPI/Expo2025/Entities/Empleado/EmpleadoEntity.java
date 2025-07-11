@@ -24,4 +24,6 @@ public class EmpleadoEntity {
     private Long IdUsuario;
     @Column(name = "FECHACONTRATACION")
     private Date FContratacion;
+    @Column(name = "DIRECCION")
+    private String direccion;
 }

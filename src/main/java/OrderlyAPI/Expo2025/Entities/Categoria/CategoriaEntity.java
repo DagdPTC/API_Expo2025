@@ -18,6 +18,4 @@ public class CategoriaEntity {
     private Long Id;
     @Column(name = "NOMBRECATEGORIA")
     private String NomCategoria;
-    @Column(name = "DESCRIPCION")
-    private String Descripcion;
 }

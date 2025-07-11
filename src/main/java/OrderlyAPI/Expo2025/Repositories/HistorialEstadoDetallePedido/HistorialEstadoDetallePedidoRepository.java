@@ -1,7 +1,0 @@
-package OrderlyAPI.Expo2025.Repositories.HistorialEstadoDetallePedido;
-
-import OrderlyAPI.Expo2025.Entities.HistorialEstadoDetallePedido.HistorialEstadoDetallePedidoEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-public interface HistorialEstadoDetallePedidoRepository extends JpaRepository<HistorialEstadoDetallePedidoEntity, Long> {
-}

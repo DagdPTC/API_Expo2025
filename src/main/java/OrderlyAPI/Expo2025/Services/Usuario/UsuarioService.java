@@ -68,6 +68,8 @@ public class UsuarioService {
         dto.setId(usuario.getId());
         dto.setNombre(usuario.getNombre());
         dto.setContrasenia(usuario.getContrasenia());
+        dto.setRolId(usuario.getRolId());
+        dto.setCorreo(usuario.getCorreo());
         return dto;
     }
 
@@ -76,6 +78,8 @@ public class UsuarioService {
         dto.setId(usuario.getId());
         dto.setNombre(usuario.getNombre());
         dto.setContrasenia(usuario.getContrasenia());
+        dto.setRolId(usuario.getRolId());
+        dto.setCorreo(usuario.getCorreo());
         return dto;
     }
 }

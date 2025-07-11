@@ -44,7 +44,6 @@ public class CategoriaService {
         CategoriaEntity categoriaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Categoria no encontrada"));
 
         categoriaExistente.setNomCategoria(categoria.getNomCategoria());
-        categoriaExistente.setDescripcion(categoria.getDescripcion());
 
         CategoriaEntity categoriaActualizado = repo.save(categoriaExistente);
         return convertirACategoriasDTO(categoriaActualizado);
@@ -69,7 +68,6 @@ public class CategoriaService {
         CategoriaEntity dto = new CategoriaEntity();
         dto.setId(categoria.getId());
         dto.setNomCategoria(categoria.getNomCategoria());
-        dto.setDescripcion(categoria.getDescripcion());
         return dto;
     }
 
@@ -77,7 +75,6 @@ public class CategoriaService {
         CategoriaDTO dto = new CategoriaDTO();
         dto.setId(categoria.getId());
         dto.setNomCategoria(categoria.getNomCategoria());
-        dto.setDescripcion(categoria.getDescripcion());
         return dto;
     }
 }

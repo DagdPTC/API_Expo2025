@@ -22,4 +22,6 @@ public class UsuarioEntity {
     private String contrasenia;
     @Column(name = "ROLID")
     private Long rolId;
+    @Column(name = "CORREO")
+    private String correo;
 }

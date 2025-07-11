@@ -72,6 +72,7 @@ public class EmpleadoService {
         dto.setIdPersona(empleado.getIdPersona());
         dto.setIdUsuario(empleado.getIdUsuario());
         dto.setFContratacion(empleado.getFContratacion());
+        dto.setDireccion(empleado.getDireccion());
         return dto;
     }
 
@@ -81,6 +82,7 @@ public class EmpleadoService {
         dto.setIdPersona(empleado.getIdPersona());
         dto.setIdUsuario(empleado.getIdUsuario());
         dto.setFContratacion(empleado.getFContratacion());
+        dto.setDireccion(empleado.getDireccion());
         return dto;
     }
 }

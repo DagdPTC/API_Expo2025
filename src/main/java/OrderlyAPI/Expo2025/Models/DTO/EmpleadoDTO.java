@@ -12,4 +12,5 @@ public class EmpleadoDTO {
     private Long IdPersona;
     private Long IdUsuario;
     private Date FContratacion;
+    private String direccion;
 }
