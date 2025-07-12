@@ -11,7 +11,6 @@ import lombok.ToString;
 @Getter @Setter @ToString @EqualsAndHashCode
 public class RolEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ROLID")
     private Long Id;
     @Column(name = "ROL", unique = true)
