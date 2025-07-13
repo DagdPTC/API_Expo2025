@@ -7,6 +7,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class Expo2025Application {
 	public static void main(String[] args) {
-		SpringApplication.run(Expo2025Application.class, args);
+		Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+		dotenv.entries().forEach(entry ->
+				System.setProperty(entry.getKey(), entry.getValue())
+		);
+        SpringApplication.run(Expo2025Application.class, args);
 	}
 }
