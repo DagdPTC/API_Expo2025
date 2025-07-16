@@ -28,7 +28,7 @@ public class EstadoPlatilloService {
     }
 
     public EstadoPlatilloDTO createEstadoPlatillo(EstadoPlatilloDTO estadoPlatilloDTO){
-        if (estadoPlatilloDTO == null || estadoPlatilloDTO.getConcepto() == null || estadoPlatilloDTO.getConcepto().isEmpty()){
+        if (estadoPlatilloDTO == null || estadoPlatilloDTO.getDescripcion() == null || estadoPlatilloDTO.getDescripcion().isEmpty()){
             throw new IllegalArgumentException("El estado platillo no puede ser nulo");
         }
         try{
@@ -44,7 +44,6 @@ public class EstadoPlatilloService {
     public EstadoPlatilloDTO updateEstadoPlatillo(Long id, EstadoPlatilloDTO estadoPlatillo){
         EstadoPlatilloEntity estadoPlatilloExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Estado Platillo no encontrado"));
 
-        estadoPlatilloExistente.setConcepto(estadoPlatillo.getConcepto());
         estadoPlatilloExistente.setDescripcion(estadoPlatillo.getDescripcion());
 
         EstadoPlatilloEntity estadoPlatilloActualizado = repo.save(estadoPlatilloExistente);
@@ -70,7 +69,6 @@ public class EstadoPlatilloService {
     public EstadoPlatilloEntity convertirAEstadoPlatillosEntity(EstadoPlatilloDTO estadoPlatillo){
         EstadoPlatilloEntity dto = new EstadoPlatilloEntity();
         dto.setId(estadoPlatillo.getId());
-        dto.setConcepto(estadoPlatillo.getConcepto());
         dto.setDescripcion(estadoPlatillo.getDescripcion());
         return dto;
     }
@@ -78,7 +76,6 @@ public class EstadoPlatilloService {
     public EstadoPlatilloDTO convertirAEstadoPlatillosDTO(EstadoPlatilloEntity estadoPlatillo){
         EstadoPlatilloDTO dto = new EstadoPlatilloDTO();
         dto.setId(estadoPlatillo.getId());
-        dto.setConcepto(estadoPlatillo.getConcepto());
         dto.setDescripcion(estadoPlatillo.getDescripcion());
         return dto;
     }

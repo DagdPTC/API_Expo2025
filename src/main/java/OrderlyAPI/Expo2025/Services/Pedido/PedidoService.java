@@ -51,6 +51,12 @@ public class PedidoService {
         pedidoExistente.setHPedido(pedido.getHPedido());
         pedidoExistente.setIdEstadoPedido(pedido.getIdEstadoPedido());
         pedidoExistente.setObservaciones(pedido.getObservaciones());
+        pedidoExistente.setCantidad(pedido.getCantidad());
+        pedidoExistente.setTotalPedido(pedido.getTotalPedido());
+        pedidoExistente.setObservaciones(pedido.getObservaciones());
+
+
+
 
         PedidoEntity pedidoActualizado = repo.save(pedidoExistente);
         return convertirAPedidosDTO(pedidoActualizado);

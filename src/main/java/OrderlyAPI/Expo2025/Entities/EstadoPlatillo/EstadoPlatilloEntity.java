@@ -16,8 +16,6 @@ public class EstadoPlatilloEntity {
     @Id
     @Column(name = "IDESTADOPLATILLO")
     private Long Id;
-    @Column(name = "CONCEPTO")
-    private String Concepto;
     @Column(name = "DESCRIPCION")
     private String Descripcion;
 }

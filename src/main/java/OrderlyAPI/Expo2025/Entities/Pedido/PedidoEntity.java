@@ -10,6 +10,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.util.Date;
 
 @Entity
@@ -33,4 +34,16 @@ public class PedidoEntity {
     private Long IdEstadoPedido;
     @Column(name = "OBSERVACIONES")
     private String Observaciones;
+    @Column(name = "CANTIDAD")
+    private Number Cantidad;
+    @Column(name = "TOTALPEDIDO")
+    private DecimalFormat TotalPedido;
+    @Column(name = "SUBTOTAL")
+    private DecimalFormat Subtotal;
+    @Column(name = "PROPINA")
+    private DecimalFormat Propina;
+    @Column(name = "DESCUENTO")
+    private DecimalFormat Descuento;
+    @Column(name = "TOTALFACTURA")
+    private DecimalFormat TotalFactura;
 }

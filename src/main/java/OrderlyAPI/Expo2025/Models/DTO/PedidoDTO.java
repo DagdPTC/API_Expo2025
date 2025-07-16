@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.util.Date;
 
 @Getter @Setter @NotBlank
@@ -17,4 +18,10 @@ public class PedidoDTO {
     private Timestamp HPedido;
     private Long IdEstadoPedido;
     private String Observaciones;
+    private Number Cantidad;
+    private DecimalFormat TotalPedido;
+    private DecimalFormat Subtotal;
+    private DecimalFormat Propina;
+    private DecimalFormat Descuento;
+    private DecimalFormat TotalFactura;
 }
