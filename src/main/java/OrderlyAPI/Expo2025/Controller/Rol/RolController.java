@@ -30,7 +30,7 @@ public class RolController {
     }
 
     @PostMapping("/createRol")
-    public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody RolDTO rol, HttpServletRequest request){
+    public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody RolDTO rol){
         try{
             RolDTO respuesta = service.createRol(rol);
             if (respuesta == null){

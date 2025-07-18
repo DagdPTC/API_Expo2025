@@ -5,6 +5,7 @@ import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class RolService {
+
+    @Autowired
     private RolRepository repo;
 
 
@@ -63,11 +66,11 @@ public class RolService {
     }
 
 
-    public RolEntity convertirARolesEntity(RolDTO rol){
-        RolEntity dto = new RolEntity();
-        dto.setId(rol.getId());
-        dto.setRol(rol.getRol());
-        return dto;
+    public RolEntity convertirARolesEntity(RolDTO dto){
+        RolEntity entity = new RolEntity();
+        entity.setId(dto.getId());
+        entity.setRol(dto.getRol());
+        return entity;
     }
 
     public RolDTO convertirARolesDTO(RolEntity rol){
