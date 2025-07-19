@@ -5,6 +5,7 @@ import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.PlatilloDTO;
 import OrderlyAPI.Expo2025.Repositories.Platillo.PlatilloRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class PlatilloService {
+
+    @Autowired
     private PlatilloRepository repo;
 
 

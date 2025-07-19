@@ -6,7 +6,7 @@ import lombok.Setter;
 
 import java.util.Date;
 
-@Getter @Setter @NotBlank
+@Getter @Setter
 public class EmpleadoDTO {
     private Long Id;
     private Long IdPersona;

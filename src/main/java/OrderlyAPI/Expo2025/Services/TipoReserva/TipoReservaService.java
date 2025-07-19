@@ -8,6 +8,7 @@ import OrderlyAPI.Expo2025.Models.DTO.TipoReservaDTO;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
 import OrderlyAPI.Expo2025.Repositories.TipoReserva.TipoReservaRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,8 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class TipoReservaService {
+
+    @Autowired
     private TipoReservaRepository repo;
 
 

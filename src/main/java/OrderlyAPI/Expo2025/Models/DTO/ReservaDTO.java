@@ -7,7 +7,7 @@ import lombok.Setter;
 import java.sql.Timestamp;
 import java.util.Date;
 
-@Getter @Setter @NotBlank
+@Getter @Setter
 public class ReservaDTO {
     private Long Id;
     private String nomCliente;

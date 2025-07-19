@@ -18,6 +18,4 @@ public class MetodoPagoEntity {
     private Long Id;
     @Column(name = "NOMBREMETODO")
     private String NomMetodo;
-    @Column(name = "DESCRIPCION")
-    private String Descripcion;
 }

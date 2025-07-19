@@ -7,6 +7,7 @@ import OrderlyAPI.Expo2025.Models.DTO.DocumentoIdentidadDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.DocumentoIdentidad.DocumentoIdentidadRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,8 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class DocumentoIdentidadService {
+
+    @Autowired
     private DocumentoIdentidadRepository repo;
 
     public List<DocumentoIdentidadDTO> getAllDocumentosIdentidades(){
