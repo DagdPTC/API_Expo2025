@@ -1,9 +1,6 @@
 package OrderlyAPI.Expo2025.Entities.DocumentoIdentidad;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +13,8 @@ import java.util.Date;
 @Getter @Setter @ToString @EqualsAndHashCode
 public class DocumentoIdentidadEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "documentoIdentidad_seq")
+    @SequenceGenerator(name = "documentoIdentidad_seq", sequenceName = "documentoIdentidad_seq", allocationSize = 1)
     @Column(name = "IDDOCUMENTO")
     private Long Id;
     @Column(name = "IDPERSONA")

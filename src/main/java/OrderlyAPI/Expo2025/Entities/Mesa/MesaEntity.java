@@ -1,9 +1,6 @@
 package OrderlyAPI.Expo2025.Entities.Mesa;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +11,8 @@ import lombok.ToString;
 @Getter @Setter @ToString @EqualsAndHashCode
 public class MesaEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "mesa_seq")
+    @SequenceGenerator(name = "mesa_seq", sequenceName = "mesa_seq", allocationSize = 1)
     @Column(name = "IDMESA")
     private Long Id;
     @Column(name = "NOMBREMESA")

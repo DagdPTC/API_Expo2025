@@ -1,9 +1,6 @@
 package OrderlyAPI.Expo2025.Entities.Empleado;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +13,8 @@ import java.util.Date;
 @Getter @Setter @ToString @EqualsAndHashCode
 public class EmpleadoEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "empleado_seq")
+    @SequenceGenerator(name = "empleado_seq", sequenceName = "empleado_seq", allocationSize = 1)
     @Column(name = "IDEMPLEADO")
     private Long Id;
     @Column(name = "IDPERSONA")

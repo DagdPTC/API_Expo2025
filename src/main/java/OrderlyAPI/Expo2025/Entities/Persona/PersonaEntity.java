@@ -1,9 +1,6 @@
 package OrderlyAPI.Expo2025.Entities.Persona;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +13,8 @@ import java.util.Date;
 @Getter @Setter @ToString @EqualsAndHashCode
 public class PersonaEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "persona_seq")
+    @SequenceGenerator(name = "persona_seq", sequenceName = "persona_seq", allocationSize = 1)
     @Column(name = "IDPERSONA")
     private Long Id;
     @Column(name = "PRIMERNOMBRE")
