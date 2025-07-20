@@ -46,6 +46,9 @@ public class UsuarioService {
         UsuarioEntity usuarioExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Usuario no encontrado"));
 
         usuarioExistente.setNombre(usuario.getNombre());
+        usuarioExistente.setContrasenia(usuario.getContrasenia());
+        usuarioExistente.setRolId(usuario.getRolId());
+        usuarioExistente.setCorreo(usuario.getCorreo());
 
         UsuarioEntity usuarioActualizado = repo.save(usuarioExistente);
         return convertirAUsuariosDTO(usuarioActualizado);

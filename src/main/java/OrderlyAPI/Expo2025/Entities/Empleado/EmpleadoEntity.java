@@ -20,7 +20,7 @@ public class EmpleadoEntity {
     private Long Id;
     @Column(name = "IDPERSONA")
     private Long IdPersona;
-    @Column(name = "IDUSUARIO")
+    @Column(name = "USUARIOID")
     private Long IdUsuario;
     @Column(name = "FECHACONTRATACION")
     private Date FContratacion;

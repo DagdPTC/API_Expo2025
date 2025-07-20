@@ -43,7 +43,7 @@ public class UsuarioController {
             }
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "status","sucess",
-                    "data",respuesta));
+                    "data", respuesta));
         }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
