@@ -48,6 +48,7 @@ public class EmpleadoService {
         empleadoExistente.setIdPersona(empleado.getIdPersona());
         empleadoExistente.setIdUsuario(empleado.getIdUsuario());
         empleadoExistente.setFContratacion(empleado.getFContratacion());
+        empleadoExistente.setDireccion(empleado.getDireccion());
 
         EmpleadoEntity empleadoActualizado = repo.save(empleadoExistente);
         return convertirAEmpleadosDTO(empleadoActualizado);

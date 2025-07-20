@@ -45,6 +45,7 @@ public class PlatilloService {
         PlatilloEntity platilloExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Platillo no encontrado"));
 
         platilloExistente.setNomPlatillo(platillo.getNomPlatillo());
+        platilloExistente.setDescripcion(platillo.getDescripcion());
         platilloExistente.setPrecio(platillo.getPrecio());
         platilloExistente.setTiempoPreparacion(platillo.getTiempoPreparacion());
 

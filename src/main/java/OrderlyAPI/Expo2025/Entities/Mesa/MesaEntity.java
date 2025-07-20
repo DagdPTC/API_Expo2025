@@ -16,8 +16,8 @@ public class MesaEntity {
     @Id
     @Column(name = "IDMESA")
     private Long Id;
-    @Column(name = "NUMEROMESA")
-    private Long NomMesa;
+    @Column(name = "NOMBREMESA")
+    private String NomMesa;
     @Column(name = "IDTIPOMESA")
     private Long IdTipoMesa;
 }

@@ -53,7 +53,7 @@ public class PlatilloController {
         }
     }
 
-    @PutMapping("/modificar/{id}")
+    @PutMapping("/modificarPlatillo/{id}")
     public ResponseEntity<?> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody PlatilloDTO platillo,
