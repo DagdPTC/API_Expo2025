@@ -46,7 +46,9 @@ public class HistorialPedidoService {
     public HistorialPedidoDTO updateHistorialpedido(Long id, HistorialPedidoDTO historialpedido){
         HistorialPedidoEntity historialpedidoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Historial pedido no encontrado"));
 
-        historialpedidoExistente.setId(historialpedido.getId());
+        historialpedidoExistente.setIdPlatillo(historialpedido.getIdPlatillo());
+        historialpedidoExistente.setIdPedido(historialpedido.getIdPedido());
+        historialpedidoExistente.setIdFactura(historialpedido.getIdFactura());
 
         HistorialPedidoEntity historialpedidoActualizado = repo.save(historialpedidoExistente);
         return convertirAHistorialPedidoDTO(historialpedidoActualizado);

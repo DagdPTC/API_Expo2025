@@ -37,10 +37,6 @@ public class PedidoEntity {
     private Date FPedido;
 
 
-    @Column(name = "HORAPEDIDO")
-    private Timestamp HPedido;
-
-
     @Column(name = "IDESTADOPEDIDO")
     private Long IdEstadoPedido;
 

@@ -8,6 +8,7 @@ import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Pedido.PedidoRepository;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,8 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class PedidoService {
+
+    @Autowired
     private PedidoRepository repo;
 
 
@@ -48,15 +51,14 @@ public class PedidoService {
         pedidoExistente.setIdMesa(pedido.getIdMesa());
         pedidoExistente.setIdEmpleado(pedido.getIdEmpleado());
         pedidoExistente.setFPedido(pedido.getFPedido());
-        pedidoExistente.setHPedido(pedido.getHPedido());
         pedidoExistente.setIdEstadoPedido(pedido.getIdEstadoPedido());
         pedidoExistente.setObservaciones(pedido.getObservaciones());
         pedidoExistente.setCantidad(pedido.getCantidad());
         pedidoExistente.setTotalPedido(pedido.getTotalPedido());
-        pedidoExistente.setObservaciones(pedido.getObservaciones());
-
-
-
+        pedidoExistente.setSubtotal(pedido.getSubtotal());
+        pedidoExistente.setPropina(pedido.getPropina());
+        pedidoExistente.setDescuento(pedido.getDescuento());
+        pedidoExistente.setTotalFactura(pedido.getTotalFactura());
 
         PedidoEntity pedidoActualizado = repo.save(pedidoExistente);
         return convertirAPedidosDTO(pedidoActualizado);
@@ -85,9 +87,15 @@ public class PedidoService {
         dto.setIdMesa(pedido.getIdMesa());
         dto.setIdEmpleado(pedido.getIdEmpleado());
         dto.setFPedido(pedido.getFPedido());
-        dto.setHPedido(pedido.getHPedido());
         dto.setIdEstadoPedido(pedido.getIdEstadoPedido());
         dto.setObservaciones(pedido.getObservaciones());
+        dto.setObservaciones(pedido.getObservaciones());
+        dto.setCantidad(pedido.getCantidad());
+        dto.setTotalPedido(pedido.getTotalPedido());
+        dto.setSubtotal(pedido.getSubtotal());
+        dto.setPropina(pedido.getPropina());
+        dto.setDescuento(pedido.getDescuento());
+        dto.setTotalFactura(pedido.getTotalFactura());
         return dto;
     }
 
@@ -98,9 +106,15 @@ public class PedidoService {
         dto.setIdMesa(pedido.getIdMesa());
         dto.setIdEmpleado(pedido.getIdEmpleado());
         dto.setFPedido(pedido.getFPedido());
-        dto.setHPedido(pedido.getHPedido());
         dto.setIdEstadoPedido(pedido.getIdEstadoPedido());
         dto.setObservaciones(pedido.getObservaciones());
+        dto.setObservaciones(pedido.getObservaciones());
+        dto.setCantidad(pedido.getCantidad());
+        dto.setTotalPedido(pedido.getTotalPedido());
+        dto.setSubtotal(pedido.getSubtotal());
+        dto.setPropina(pedido.getPropina());
+        dto.setDescuento(pedido.getDescuento());
+        dto.setTotalFactura(pedido.getTotalFactura());
         return dto;
     }
 }

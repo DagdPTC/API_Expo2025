@@ -7,5 +7,6 @@ import lombok.Setter;
 @Getter @Setter
 public class CategoriaDTO {
     private Long Id;
+    @NotBlank
     private String NomCategoria;
 }

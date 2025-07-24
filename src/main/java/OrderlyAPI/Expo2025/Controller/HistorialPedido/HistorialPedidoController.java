@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api HistorialPedido ")
+@RequestMapping("/apiHistorialPedido")
 public class HistorialPedidoController {
 
     @Autowired
@@ -53,7 +53,7 @@ public class HistorialPedidoController {
         }
     }
 
-    @PutMapping("/modificarHistorialPedido /{id}")
+    @PutMapping("/modificarHistorialPedido/{id}")
     public ResponseEntity<?> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody HistorialPedidoDTO historialpedido,

@@ -25,7 +25,7 @@ public class HistorialPedidosController {
     @Autowired
     private HistorialPedidosService service;
 
-    @GetMapping("/getDataHistorialPedidos ")
+    @GetMapping("/getDataHistorialPedidos")
     public List<HistorialPedidosDTO> getData(){
         return service.getAllhistorialpedido ();
     }

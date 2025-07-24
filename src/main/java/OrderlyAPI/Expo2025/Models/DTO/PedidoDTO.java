@@ -15,7 +15,6 @@ public class PedidoDTO {
     private Long IdMesa;
     private Long IdEmpleado;
     private Date FPedido;
-    private Timestamp HPedido;
     private Long IdEstadoPedido;
     private String Observaciones;
     private Number Cantidad;
