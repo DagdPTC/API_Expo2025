@@ -12,8 +12,8 @@ import lombok.ToString;
 public class TipoMesaEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tipoMesa_seq")
-    @SequenceGenerator(name = "tipoMesa_seq", sequenceName = "tipoMesa_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tipo_Mesa_seq")
+    @SequenceGenerator(name = "tipo_Mesa_seq", sequenceName = "tipo_Mesa_seq", allocationSize = 1)
     @Column(name = "IDTIPOMESA")
     private Long Id;
     @Column(name = "NOMBRETIPOMESA")

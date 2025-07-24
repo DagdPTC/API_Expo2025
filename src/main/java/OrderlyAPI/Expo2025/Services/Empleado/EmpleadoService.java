@@ -30,7 +30,7 @@ public class EmpleadoService {
 
     public EmpleadoDTO createEmpleado(EmpleadoDTO empleadoDTO){
         if (empleadoDTO == null || empleadoDTO.getIdUsuario() == null || empleadoDTO.getIdUsuario().describeConstable().isEmpty()){
-            throw new IllegalArgumentException("El Id Usuario no puede ser nulo");
+            throw new IllegalArgumentException("El Empleado no puede ser nulo");
         }
         try{
             EmpleadoEntity empleadoEntity = convertirAEmpleadosEntity(empleadoDTO);

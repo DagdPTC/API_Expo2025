@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter @Setter @NotBlank
+@Getter @Setter
 public class TipoMesaDTO {
     private Long Id;
     private String Nombre;

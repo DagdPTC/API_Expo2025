@@ -1,11 +1,10 @@
-package OrderlyAPI.Expo2025.Controller.Factura;
+package OrderlyAPI.Expo2025.Controller.HistorialPedido;
 
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatosDuplicados;
-import OrderlyAPI.Expo2025.Models.DTO.FacturaDTO;
-import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
-import OrderlyAPI.Expo2025.Services.Factura.FacturaService;
-import OrderlyAPI.Expo2025.Services.Rol.RolService;
+import OrderlyAPI.Expo2025.Models.DTO.HistorialPedidoDTO;
+import OrderlyAPI.Expo2025.Services.HistorialPedido.HistorialPedidoService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,21 +18,21 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/apiFactura")
-public class FacturaController {
+@RequestMapping("/api HistorialPedido ")
+public class HistorialPedidoController {
 
     @Autowired
-    private FacturaService service;
+    private HistorialPedidoService service;
 
-    @GetMapping("/getDataFactura")
-    public List<FacturaDTO> getData(){
-        return service.getAllFacturas();
+    @GetMapping("/getDataHistorialPedido")
+    public List<HistorialPedidoDTO> getData(){
+        return service.getAllhistorialpedido();
     }
 
-    @PostMapping("/createFactura")
-    public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody FacturaDTO factura){
+    @PostMapping("/createHistorialPedido")
+    public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody HistorialPedidoDTO historialpedido, HttpServletRequest request){
         try{
-            FacturaDTO respuesta = service.createFacturas(factura);
+            HistorialPedidoDTO respuesta = service.createHistorialPediso(historialpedido);
             if (respuesta == null){
                 return ResponseEntity.badRequest().body(Map.of(
                         "status", "Inserción incorrecta",
@@ -48,16 +47,16 @@ public class FacturaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "status", "error",
-                            "message", "Error al registrar",
+                            "message", "Error al registrar usuario",
                             "detail", e.getMessage()
                     ));
         }
     }
 
-    @PutMapping("/modificarFactura/{id}")
+    @PutMapping("/modificarHistorialPedido /{id}")
     public ResponseEntity<?> actualizar(
             @PathVariable Long id,
-            @Valid @RequestBody FacturaDTO factura,
+            @Valid @RequestBody HistorialPedidoDTO historialpedido,
             BindingResult bindingResult){
 
         if (bindingResult.hasErrors()){
@@ -68,8 +67,8 @@ public class FacturaController {
         }
 
         try{
-            FacturaDTO facturaActualizado = service.updateFactura(id, factura);
-            return ResponseEntity.ok(facturaActualizado);
+            HistorialPedidoDTO historialpedidoActualizado = service.updateHistorialpedido(id, historialpedido);
+            return ResponseEntity.ok(historialpedidoActualizado);
         }
 
         catch (ExceptionDatoNoEncontrado e){
@@ -83,28 +82,30 @@ public class FacturaController {
         }
     }
 
-    @DeleteMapping("/eliminarFactura/{id}")
+    @DeleteMapping("/eliminarHistorialPedido/{id}")
     public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id){
         try{
-            if (!service.deleteFactura(id)){
+            if (!service.deleteHistorialpedido(id)){
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .header("X-Mensaje-Error", "Factura no encontrada")
+                        .header("X-Mensaje-Error", "Historial pedido no encontrado")
                         .body(Map.of(
                                 "error", "Not found",
-                                "mensaje", "La factura no ha sido encontrada",
+                                "mensaje", "El historial pedido no ha sido encontrado",
                                 "timestamp", Instant.now().toString()
                         ));
             }
             return ResponseEntity.ok().body(Map.of(
                     "status", "Proceso completado",
-                    "message", "Factura eliminada exitosamente"
+                    "message", "Historial pedido eliminado exitosamente"
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
                     "status", "Error",
-                    "message", "Error al eliminar la Factura",
+                    "message", "Error al eliminar el historial pedido",
                     "detail", e.getMessage()
             ));
         }
     }
 }
+
+

@@ -18,16 +18,10 @@ public class FacturaEntity {
     @Id
     @Column(name = "IDFACTURA")
     private Long Id;
-    @Column(name = "NUMEROFACTURA")
-    private String NumFactura;
     @Column(name = "IDPEDIDO")
     private Long IdPedido;
-    @Column(name = "FECHAFACTURA")
-    private Date FFactura;
     @Column(name = "SUBTOTAL")
     private double SubTotal;
-    @Column(name = "IMPUESTO")
-    private double Impuesto;
     @Column(name = "DESCUENTO")
     private double Descuento;
     @Column(name = "PROPINA")

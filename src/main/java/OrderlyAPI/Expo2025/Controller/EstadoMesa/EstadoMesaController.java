@@ -26,7 +26,7 @@ public class EstadoMesaController {
     @Autowired
     private EstadoMesaService service;
 
-    @GetMapping("/getEstadoMesa")
+    @GetMapping("/getDataEstadoMesa")
     public List<EstadoMesaDTO> getData(){
         return service.getAllEstadoMesas();
     }

@@ -1,14 +1,12 @@
 package OrderlyAPI.Expo2025.Entities.HistorialPedidos;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 
 @Entity
@@ -16,16 +14,37 @@ import java.sql.Timestamp;
 @Getter @Setter @ToString @EqualsAndHashCode
 public class HistorialPedidosEntity {
     @Id
-    @Column(name = "IDHISTORIAL")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "historial_Pedidos_seq")
+    @SequenceGenerator(name = "historial_Pedidos_seq", sequenceName = "historial_Pedidos_seq", allocationSize = 1)
+    @Column(name = " IDHISTORIAL ")
     private Long Id;
-    @Column(name = "FECHAPEDIDO")
-    private Timestamp FechaPedido;
-    @Column(name = "DESCRIPCION")
-    private String Descripcion;
-    @Column(name = "IDEMPLEADO")
+    @Column(name = " IDPEDIDO ")
+    private Long IdPedido;
+    @Column(name = " NOMBRECLIENTE ")
+    private String NombreCliente;
+    @Column(name = " IDEMPLEADO ")
     private Long IdEmpleado;
-    @Column(name = "IDCLIENTE")
-    private Long IdCliente;
-    @Column(name = "IDPLATILLO")
+    @Column(name = " IDMESA ")
+    private Long IdMesa;
+    @Column(name = " FECHAHISTORIAL ")
+    private Date FechaHistorial;
+    @Column(name = " RESERVACION ")
+    private Boolean Reservacion;
+    @Column(name = " IDESTADORESERVA ")
+    private Long idEstadoReserva;
+    @Column(name = " IDPLATILLO ")
     private Long IdPlatillo;
+    @Column(name = " CANTIDAD ")
+    private Number Cantidad;
+    @Column(name = " PRECIOUNITARIO ")
+    private Double PrecioUnitario;
+    @Column(name = " SUBTOTAL ")
+    private Double Subtotal;
+    @Column(name = " PROPINA ")
+    private Double Propina;
+    @Column(name = " DESCUENTO ")
+    private Double Descuento;
+    @Column(name = " TOTAL ")
+    private Double Total;
+
 }

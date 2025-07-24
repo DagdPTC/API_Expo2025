@@ -21,7 +21,7 @@ public class TipoMesaService {
     @Autowired
     private TipoMesaRepository repo;
 
-    public List<TipoMesaDTO> getAllRoles(){
+    public List<TipoMesaDTO> getAllTipoMesas(){
         List<TipoMesaEntity> tipos = repo.findAll();
         return tipos.stream()
                 .map(this::convertirTipoMesaDTO)

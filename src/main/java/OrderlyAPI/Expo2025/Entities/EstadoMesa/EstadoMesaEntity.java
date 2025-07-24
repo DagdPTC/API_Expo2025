@@ -11,8 +11,8 @@ import lombok.ToString;
 @Getter @Setter @ToString @EqualsAndHashCode
 public class EstadoMesaEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "estadoMesa_seq")
-    @SequenceGenerator(name = "estadoMesa_seq", sequenceName = "estadoMesa_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "estado_Mesa_seq")
+    @SequenceGenerator(name = "estado_Mesa_seq", sequenceName = "estado_Mesa_seq", allocationSize = 1)
     @Column(name = "IDESTADOMESA")
     private Long Id;
     @Column(name = "ESTADOMESA")

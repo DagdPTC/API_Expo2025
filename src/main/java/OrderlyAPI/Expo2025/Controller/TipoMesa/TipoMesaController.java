@@ -1,11 +1,11 @@
-package OrderlyAPI.Expo2025.Controller.Factura;
+package OrderlyAPI.Expo2025.Controller.TipoMesa;
 
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatosDuplicados;
-import OrderlyAPI.Expo2025.Models.DTO.FacturaDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
-import OrderlyAPI.Expo2025.Services.Factura.FacturaService;
+import OrderlyAPI.Expo2025.Models.DTO.TipoMesaDTO;
 import OrderlyAPI.Expo2025.Services.Rol.RolService;
+import OrderlyAPI.Expo2025.Services.TipoMesa.TipoMesaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,21 +19,21 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/apiFactura")
-public class FacturaController {
+@RequestMapping("/apiTipoMesa")
+public class TipoMesaController {
 
     @Autowired
-    private FacturaService service;
+    private TipoMesaService service;
 
-    @GetMapping("/getDataFactura")
-    public List<FacturaDTO> getData(){
-        return service.getAllFacturas();
+    @GetMapping("/getDataTipoMesa")
+    public List<TipoMesaDTO> getData(){
+        return service.getAllTipoMesas();
     }
 
-    @PostMapping("/createFactura")
-    public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody FacturaDTO factura){
+    @PostMapping("/createTipoMesa")
+    public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody TipoMesaDTO tipoMesa){
         try{
-            FacturaDTO respuesta = service.createFacturas(factura);
+            TipoMesaDTO respuesta = service.createTipomesa(tipoMesa);
             if (respuesta == null){
                 return ResponseEntity.badRequest().body(Map.of(
                         "status", "Inserción incorrecta",
@@ -54,10 +54,10 @@ public class FacturaController {
         }
     }
 
-    @PutMapping("/modificarFactura/{id}")
+    @PutMapping("/modificarTipoMesa/{id}")
     public ResponseEntity<?> actualizar(
             @PathVariable Long id,
-            @Valid @RequestBody FacturaDTO factura,
+            @Valid @RequestBody TipoMesaDTO tipoMesa,
             BindingResult bindingResult){
 
         if (bindingResult.hasErrors()){
@@ -68,8 +68,8 @@ public class FacturaController {
         }
 
         try{
-            FacturaDTO facturaActualizado = service.updateFactura(id, factura);
-            return ResponseEntity.ok(facturaActualizado);
+            TipoMesaDTO tipoMesaActualizado = service.updatetipoMesa(id, tipoMesa);
+            return ResponseEntity.ok(tipoMesaActualizado);
         }
 
         catch (ExceptionDatoNoEncontrado e){
@@ -83,26 +83,26 @@ public class FacturaController {
         }
     }
 
-    @DeleteMapping("/eliminarFactura/{id}")
+    @DeleteMapping("/eliminarTipoMesa/{id}")
     public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id){
         try{
-            if (!service.deleteFactura(id)){
+            if (!service.deleteTipoMesa(id)){
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .header("X-Mensaje-Error", "Factura no encontrada")
+                        .header("X-Mensaje-Error", "Tipo Mesa no encontrada")
                         .body(Map.of(
                                 "error", "Not found",
-                                "mensaje", "La factura no ha sido encontrada",
+                                "mensaje", "El Tipo Mesa no ha sido encontrada",
                                 "timestamp", Instant.now().toString()
                         ));
             }
             return ResponseEntity.ok().body(Map.of(
                     "status", "Proceso completado",
-                    "message", "Factura eliminada exitosamente"
+                    "message", "Tipo Mesa eliminado exitosamente"
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
                     "status", "Error",
-                    "message", "Error al eliminar la Factura",
+                    "message", "Error al eliminar el Tipo Mesa",
                     "detail", e.getMessage()
             ));
         }

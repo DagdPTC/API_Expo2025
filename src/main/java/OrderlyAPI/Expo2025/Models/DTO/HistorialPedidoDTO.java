@@ -1,12 +1,13 @@
 package OrderlyAPI.Expo2025.Models.DTO;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter @Setter
-public class CategoriaDTO {
+public class HistorialPedidoDTO {
+
     private Long Id;
-    @NotBlank
-    private String NomCategoria;
+    private Long IdPlatillo;
+    private Long IdPedido;
+    private Long IdFactura;
 }
