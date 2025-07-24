@@ -2,6 +2,7 @@ package OrderlyAPI.Expo2025.Entities.HistorialPedido;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,13 +19,16 @@ public class HistorialPedidoEntity {
     @Column(name = "IDHISTORIALPEDIDO")
     @NotBlank(message = "El campo no puede ser nulo")
     private Long Id;
+
     @Column(name = "IDPLATILLO")
-    @NotBlank(message = "El campo nompuedes ernulo")
+    @NotNull(message = "El IdPlatillo no puede ser nulo")
     private Long IdPlatillo;
+
     @Column(name = "IDPEDIDO", unique = true)
-    @NotBlank(message = "El campo no puedde ser nulo")
+    @NotNull(message = "El IdPedido no puede ser nulo")
     private Long IdPedido;
+
     @Column(name = "IDFACTURA", unique = true)
-    @NotBlank(message = "El campo no puede ser nulo")
+    @NotNull(message = "El IdFactura no puede ser nulo")
     private Long IdFactura;
 }

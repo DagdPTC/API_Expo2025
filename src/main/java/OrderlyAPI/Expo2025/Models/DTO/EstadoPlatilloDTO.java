@@ -7,5 +7,5 @@ import lombok.Setter;
 @Getter @Setter
 public class EstadoPlatilloDTO {
     private Long Id;
-    private String Descripcion;
+    private String NomEstado;
 }

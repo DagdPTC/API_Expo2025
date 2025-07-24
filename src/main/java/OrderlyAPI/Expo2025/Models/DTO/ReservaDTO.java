@@ -16,8 +16,6 @@ public class ReservaDTO {
     private Date FReserva;
     private Timestamp Hora;
     private Long CantidadPersonas;
-    private String Eventoespecial;
-    private String Mesadiscpo;
     private Long idTipoReserva;
     private Long IdEstadoReserva;
 }

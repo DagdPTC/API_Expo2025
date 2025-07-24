@@ -52,8 +52,6 @@ public class ReservaService {
         reservaExistente.setFReserva(reserva.getFReserva());
         reservaExistente.setHora(reserva.getHora());
         reservaExistente.setCantidadPersonas(reserva.getCantidadPersonas());
-        reservaExistente.setEventoespecial(reserva.getEventoespecial());
-        reservaExistente.setMesadiscpo(reserva.getMesadiscpo());
         reservaExistente.setIdTipoReserva(reserva.getIdTipoReserva());
         reservaExistente.setIdEstadoReserva(reserva.getIdEstadoReserva());
 
@@ -85,8 +83,6 @@ public class ReservaService {
         dto.setFReserva(reserva.getFReserva());
         dto.setHora(reserva.getHora());
         dto.setCantidadPersonas(reserva.getCantidadPersonas());
-        dto.setEventoespecial(reserva.getEventoespecial());
-        dto.setMesadiscpo(reserva.getMesadiscpo());
         dto.setIdTipoReserva(reserva.getIdTipoReserva());
         dto.setIdEstadoReserva(reserva.getIdEstadoReserva());
         return dto;
@@ -100,8 +96,6 @@ public class ReservaService {
         dto.setFReserva(reserva.getFReserva());
         dto.setHora(reserva.getHora());
         dto.setCantidadPersonas(reserva.getCantidadPersonas());
-        dto.setEventoespecial(reserva.getEventoespecial());
-        dto.setMesadiscpo(reserva.getMesadiscpo());
         dto.setIdTipoReserva(reserva.getIdTipoReserva());
         dto.setIdEstadoReserva(reserva.getIdEstadoReserva());
         return dto;
