@@ -1,12 +1,9 @@
 package OrderlyAPI.Expo2025.Services.Factura;
 
 import OrderlyAPI.Expo2025.Entities.Factura.FacturaEntity;
-import OrderlyAPI.Expo2025.Entities.HistorialPedidos.HistorialPedidosEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.FacturaDTO;
-import OrderlyAPI.Expo2025.Models.DTO.HistorialPedidosDTO;
 import OrderlyAPI.Expo2025.Repositories.Factura.FacturaRepository;
-import OrderlyAPI.Expo2025.Repositories.HistorialPedidos.HistorialPedidosRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
