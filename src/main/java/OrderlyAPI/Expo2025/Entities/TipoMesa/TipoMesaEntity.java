@@ -20,13 +20,9 @@ public class TipoMesaEntity {
     @Column(name = "IDTIPOMESA")
     private Long Id;
 
-    @NotNull(message = "El nombre del tipo de mesa no puede ser nulo")
-    @NotEmpty(message = "El nombre del tipo de mesa no puede estar vacío")
     @Column(name = "NOMBRETIPOMESA")
     private String Nombre;
 
-    @NotNull(message = "La capacidad de personas no puede ser nula")
-    @Min(value = 1, message = "La capacidad de personas debe ser al menos 1")
     @Column(name = "CAPACIDADPERSONAS")
     private Long CapacidadPersonas;
 

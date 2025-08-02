@@ -19,9 +19,6 @@ public class EstadoReservaEntity {
     @Column(name = "IDESTADORESERVA")
     private Long Id;
 
-    @NotNull(message = "El nombre del estado no puede ser nulo")
-    @NotEmpty(message = "El nombre del estado no puede estar vacío")
-    @Size(max = 50, message = "El nombre del estado no puede tener más de 50 caracteres")
-    @Column(name = "NOMBREESTADO")
+    @Column(name = "NOMBREESTADO", unique = true)
     private String NomEstado;
 }

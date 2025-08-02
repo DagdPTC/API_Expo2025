@@ -19,15 +19,9 @@ public class EstadoMesaEntity {
     @Column(name = "IDESTADOMESA")
     private Long Id;
 
-    @NotNull(message = "El estadoMesa no puede ser nulo")
-    @NotEmpty(message = "El estadoMesa no puede estar vacío")
-    @Size(max = 50, message = "El estadoMesa no puede tener más de 50 caracteres")
-    @Column(name = "ESTADOMESA")
+    @Column(name = "ESTADOMESA", unique = true)
     private String EstadoMesa;
 
-    @NotNull(message = "El color del estadoMesa no puede ser nulo")
-    @NotEmpty(message = "El color del estadoMesa no puede estar vacío")
-    @Size(max = 50, message = "El color del estadoMesa no puede tener más de 50 caracteres")
-    @Column(name = "COLORESTADOMESA")
+    @Column(name = "COLORESTADOMESA", unique = true)
     private String ColorEstadoMesa;
 }

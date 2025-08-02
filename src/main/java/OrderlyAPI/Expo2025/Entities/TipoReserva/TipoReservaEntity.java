@@ -19,9 +19,6 @@ public class TipoReservaEntity {
     @Column(name = "IDTIPORESERVA")
     private Long Id;
 
-    @NotNull(message = "El nombre del tipo de reserva no puede ser nulo")
-    @NotEmpty(message = "El nombre del tipo de reserva no puede estar vacío")
-    @Size(max = 15, message = "El nombre del tipo de reserva no puede tener más de 15 caracteres")
     @Column(name = "NOMBRETIPO")
     private String NomTipo;
 }

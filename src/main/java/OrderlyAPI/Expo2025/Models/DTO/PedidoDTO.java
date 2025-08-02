@@ -1,26 +1,51 @@
 package OrderlyAPI.Expo2025.Models.DTO;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 
-@Getter @Setter @NotBlank
+@Getter @Setter
 public class PedidoDTO {
+
     private Long Id;
+
+    @NotBlank(message = "El nombre cliente no puede ser nulo")
+    @Size(max = 100, message = "El nombre del cliente no puede tener mas de 100 caracteres")
     private String Nombrecliente;
+
     private Long IdMesa;
+
     private Long IdEmpleado;
-    private Date FPedido;
+
+    @NotBlank(message = "La fecha pedido no puede ser nulo")
+    private LocalDateTime FPedido;
+
     private Long IdEstadoPedido;
+
+    @NotBlank(message = "Las observacion no puede ser nula")
+    @Size(max = 100, message = "Las observaciones no pueden tener mas de 100 caracteres")
     private String Observaciones;
-    private Number Cantidad;
-    private DecimalFormat TotalPedido;
-    private DecimalFormat Subtotal;
-    private DecimalFormat Propina;
-    private DecimalFormat Descuento;
-    private DecimalFormat TotalFactura;
+
+    @NotBlank(message = "La cantidad no puede ser nula")
+    @Min(value = 1, message = "La cantidad no puede ser cero o negativa")
+    private Long Cantidad;
+
+    @DecimalMin(value = "0.01", message = "El total pedido debe ser mayor de 0.01")
+    @DecimalMax(value = "99999999.99", message = "El total pedido debe ser menor de 99999999.99")
+    private double TotalPedido;
+
+    @DecimalMin(value = "0.01", message = "El subtotal debe ser mayor de 0.01")
+    @DecimalMax(value = "99999999.99", message = "El subtotal debe ser menor de 99999999.99")
+    private double Subtotal;
+
+    @DecimalMin(value = "0.01", message = "La propina debe ser mayor de 0.01")
+    @DecimalMax(value = "99999999.99", message = "La propina debe ser menor de 99999999.99")
+    private double Propina;
+
+    private Long IdPlatillo;
 }

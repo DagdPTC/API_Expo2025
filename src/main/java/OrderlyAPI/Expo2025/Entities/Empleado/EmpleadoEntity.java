@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -20,20 +21,12 @@ public class EmpleadoEntity {
     @Column(name = "IDEMPLEADO")
     private Long Id;
 
-    @NotNull(message = "El IdPersona no puede ser nulo")
-    @Column(name = "IDPERSONA")
+    @Column(name = "IDPERSONA", unique = true)
     private Long IdPersona;
 
-    @NotNull(message = "El IdUsuario no puede ser nulo")
-    @Column(name = "USUARIOID")
+    @Column(name = "USUARIOID", unique = true)
     private Long IdUsuario;
 
-    @NotNull(message = "La fecha de contratacion no puede ser nulo")
     @Column(name = "FECHACONTRATACION")
-    private Date FContratacion;
-
-    @NotNull(message = "La direccion no puede ser nulo")
-    @Size(max = 255, message = "La direccion no puede excederse de 255 caracteres")
-    @Column(name = "DIRECCION")
-    private String direccion;
+    private LocalDateTime FContratacion;
 }

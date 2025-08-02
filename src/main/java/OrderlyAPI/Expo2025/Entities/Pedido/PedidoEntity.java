@@ -8,6 +8,7 @@ import lombok.ToString;
 
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -20,51 +21,36 @@ public class PedidoEntity {
     @Column(name = "IDPEDIDO")
     private Long Id;
 
-
     @Column(name = "NOMBRECLIENTE")
     private String Nombrecliente;
-
 
     @Column(name = "IDMESA")
     private Long IdMesa;
 
-
     @Column(name = "IDEMPLEADO")
     private Long IdEmpleado;
 
-
     @Column(name = "FECHAPEDIDO")
-    private Date FPedido;
-
+    private LocalDateTime FPedido;
 
     @Column(name = "IDESTADOPEDIDO")
     private Long IdEstadoPedido;
 
-
     @Column(name = "OBSERVACIONES")
     private String Observaciones;
 
-
     @Column(name = "CANTIDAD")
-    private Number Cantidad;
-
+    private Long Cantidad;
 
     @Column(name = "TOTALPEDIDO")
-    private DecimalFormat TotalPedido;
-
+    private double TotalPedido;
 
     @Column(name = "SUBTOTAL")
-    private DecimalFormat Subtotal;
-
+    private double Subtotal;
 
     @Column(name = "PROPINA")
-    private DecimalFormat Propina;
+    private double Propina;
 
-
-    @Column(name = "DESCUENTO")
-    private DecimalFormat Descuento;
-
-
-    @Column(name = "TOTALFACTURA")
-    private DecimalFormat TotalFactura;
+    @Column(name = "IDPLATILLO")
+    private Long IdPlatillo;
 }

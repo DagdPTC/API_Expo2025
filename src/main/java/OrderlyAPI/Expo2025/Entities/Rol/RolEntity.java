@@ -15,6 +15,7 @@ public class RolEntity {
     @SequenceGenerator(name = "rol_seq", sequenceName = "rol_seq", allocationSize = 1)
     @Column(name = "ROLID")
     private Long Id;
+
     @Column(name = "ROL", unique = true)
     private String rol;
 }

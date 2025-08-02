@@ -22,19 +22,9 @@ public class DocumentoIdentidadEntity {
     @Column(name = "IDDOCUMENTO")
     private Long Id;
 
-    @NotNull(message = "El IdPersona no puede ser nula")
-    @Column(name = "IDPERSONA")
-    private Long Idpersona;
+    @Column(name = "IDTIPODOCUMENTO", unique = true)
+    private Long IdtipoDoc;
 
-    @NotNull(message = "El TipoDocumento no puede ser nulo")
-    @NotEmpty(message = "El TipoDocumento no puede estar vacio")
-    @Size(max = 15, message = "El TipoDocumento no puede mas de 15 caracteres")
-    @Column(name = "TIPODOCUMENTO")
-    private String tipoDoc;
-
-    @NotNull(message = "El NumeroDocumento no puede ser nulo")
-    @NotEmpty(message = "El NumeroDocumento no puede estar vacio")
-    @Pattern(regexp = "^[0-9]{9}$", message = "El numero de DUI debe contener 9 digitos numericos")
-    @Column(name = "NUMERODOCUMENTO")
+    @Column(name = "NUMERODOCUMENTO", unique = true)
     private String numDoc;
 }

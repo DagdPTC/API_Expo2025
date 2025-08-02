@@ -20,23 +20,15 @@ public class PlatilloEntity {
     @Column(name = "IDPLATILLO")
     private Long Id;
 
-    @NotNull(message = "El nombre del platillo no puede ser nulo")
-    @NotEmpty(message = "El nombre del platillo no puede estar vacío")
-    @Size(max = 50, message = "El nombre del platillo no puede tener más de 50 caracteres")
-    @Column(name = "NOMBREPLATILLO")
+    @Column(name = "NOMBREPLATILLO", unique = true)
     private String NomPlatillo;
 
-    @Size(max = 255, message = "La descripción no puede tener más de 255 caracteres")
     @Column(name = "DESCRIPCION")
     private String Descripcion;
 
-    @NotNull(message = "El precio no puede ser nulo")
-    @Min(value = 1, message = "El precio debe ser mayor que 0")
     @Column(name = "PRECIO")
     private double Precio;
 
-    @NotNull(message = "El tiempo de preparación no puede ser nulo")
-    @Min(value = 1, message = "El tiempo de preparación debe ser mayor que 0")
-    @Column(name = "TIEMPOPREPARACION")
-    private Long TiempoPreparacion;
+    @Column(name = "IDCATEGORIA")
+    private Long IdCategoria;
 }

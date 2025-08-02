@@ -19,9 +19,6 @@ public class CategoriaEntity {
     @Column(name = "IDCATEGORIA")
     private Long Id;
 
-    @NotNull(message = "El nombre de la categoria no puede ser nulo")
-    @NotEmpty(message = "El nombre de la categoria no puede estar vacio")
-    @Size(min = 3, max = 50, message = "El nombre de la categoria debe tener entre 3 a 50 caracteres")
-    @Column(name = "NOMBRECATEGORIA")
+    @Column(name = "NOMBRECATEGORIA", unique = true)
     private String NomCategoria;
 }

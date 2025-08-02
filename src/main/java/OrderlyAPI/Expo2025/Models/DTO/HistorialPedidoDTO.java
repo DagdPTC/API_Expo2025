@@ -7,7 +7,6 @@ import lombok.Setter;
 public class HistorialPedidoDTO {
 
     private Long Id;
-    private Long IdPlatillo;
     private Long IdPedido;
     private Long IdFactura;
 }

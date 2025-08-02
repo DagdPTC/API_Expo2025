@@ -19,13 +19,12 @@ public class MesaEntity {
     @Column(name = "IDMESA")
     private Long Id;
 
-    @NotNull(message = "El nombre de la mesa no puede ser nulo")
-    @NotEmpty(message = "El nombre de la mesa no puede estar vacío")
-    @Size(max = 15, message = "El nombre de la mesa no puede tener más de 15 caracteres")
-    @Column(name = "NOMBREMESA")
+    @Column(name = "NOMBREMESA", unique = true)
     private String NomMesa;
 
-    @NotNull(message = "El IdTipoMesa no puede ser nulo")
     @Column(name = "IDTIPOMESA")
     private Long IdTipoMesa;
+
+    @Column(name = "IDESTADOMESA")
+    private Long IdEstadoMesa;
 }

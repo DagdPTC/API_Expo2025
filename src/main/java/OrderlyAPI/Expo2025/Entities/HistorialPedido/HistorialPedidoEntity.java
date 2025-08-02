@@ -20,15 +20,9 @@ public class HistorialPedidoEntity {
     @NotBlank(message = "El campo no puede ser nulo")
     private Long Id;
 
-    @Column(name = "IDPLATILLO")
-    @NotNull(message = "El IdPlatillo no puede ser nulo")
-    private Long IdPlatillo;
-
     @Column(name = "IDPEDIDO", unique = true)
-    @NotNull(message = "El IdPedido no puede ser nulo")
     private Long IdPedido;
 
     @Column(name = "IDFACTURA", unique = true)
-    @NotNull(message = "El IdFactura no puede ser nulo")
     private Long IdFactura;
 }
