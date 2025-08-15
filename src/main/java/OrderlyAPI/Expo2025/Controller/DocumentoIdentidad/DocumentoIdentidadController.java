@@ -9,6 +9,7 @@ import OrderlyAPI.Expo2025.Services.Rol.RolService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -21,14 +22,30 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/apiDocumentoIdentidad")
+@CrossOrigin
 public class DocumentoIdentidadController {
 
     @Autowired
     private DocumentoIdentidadService service;
 
     @GetMapping("/getDataDocumentoIdentidad")
-    public List<DocumentoIdentidadDTO> getData(){
-        return service.getAllDocumentosIdentidades();
+    public ResponseEntity<Page<DocumentoIdentidadDTO>> getData(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        if (size <= 0 || size > 50){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "El tamaño de la pagina debe estar entre 1 y 50"
+            ));
+            return ResponseEntity.ok(null);
+        }
+        Page<DocumentoIdentidadDTO> datos = service.getAllDocumentosIdentidades(page, size);
+        if (datos == null){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "No hay documentos identidades registrados"
+            ));
+        }
+        return ResponseEntity.ok(datos);
     }
 
 

@@ -8,6 +8,7 @@ import OrderlyAPI.Expo2025.Services.Rol.RolService;
 import OrderlyAPI.Expo2025.Services.TipoMesa.TipoMesaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -20,16 +21,31 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/apiTipoMesa")
+@CrossOrigin
 public class TipoMesaController {
 
     @Autowired
     private TipoMesaService service;
 
     @GetMapping("/getDataTipoMesa")
-    public List<TipoMesaDTO> getData(){
-        return service.getAllTipoMesas();
+    public ResponseEntity<Page<TipoMesaDTO>> getData(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        if (size <= 0 || size > 50){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "El tamaño de la pagina debe estar entre 1 y 50"
+            ));
+            return ResponseEntity.ok(null);
+        }
+        Page<TipoMesaDTO> datos = service.getAllTipoMesas(page, size);
+        if (datos == null){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "No hay tipo mesas registrados"
+            ));
+        }
+        return ResponseEntity.ok(datos);
     }
-
     @PostMapping("/createTipoMesa")
     public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody TipoMesaDTO tipoMesa){
         try{

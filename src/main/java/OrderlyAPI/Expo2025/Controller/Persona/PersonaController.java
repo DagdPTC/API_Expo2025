@@ -4,11 +4,13 @@ import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatosDuplicados;
 import OrderlyAPI.Expo2025.Models.DTO.PersonaDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
+import OrderlyAPI.Expo2025.Models.DTO.UsuarioDTO;
 import OrderlyAPI.Expo2025.Services.Persona.PersonaService;
 import OrderlyAPI.Expo2025.Services.Rol.RolService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -21,14 +23,30 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/apiPersona")
+@CrossOrigin
 public class PersonaController {
 
     @Autowired
     private PersonaService service;
 
     @GetMapping("/getDataPersona")
-    public List<PersonaDTO> getData(){
-        return service.getAllPersonas();
+    public ResponseEntity<Page<PersonaDTO>> getData(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        if (size <= 0 || size > 50){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "El tamaño de la pagina debe estar entre 1 y 50"
+            ));
+            return ResponseEntity.ok(null);
+        }
+        Page<PersonaDTO> datos = service.getAllPersonas(page, size);
+        if (datos == null){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "No hay personas registrados"
+            ));
+        }
+        return ResponseEntity.ok(datos);
     }
 
     @PostMapping("/createPersona")

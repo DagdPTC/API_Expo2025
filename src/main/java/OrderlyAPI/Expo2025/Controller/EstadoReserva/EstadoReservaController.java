@@ -9,6 +9,7 @@ import OrderlyAPI.Expo2025.Services.Rol.RolService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -21,16 +22,31 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/apiEstadoReserva")
+@CrossOrigin
 public class EstadoReservaController {
 
     @Autowired
     private EstadoReservaService service;
 
     @GetMapping("/getDataEstadoReserva")
-    public List<EstadoReservaDTO> getData(){
-        return service.getAllEstadoReservas();
+    public ResponseEntity<Page<EstadoReservaDTO>> getData(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        if (size <= 0 || size > 50){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "El tamaño de la pagina debe estar entre 1 y 50"
+            ));
+            return ResponseEntity.ok(null);
+        }
+        Page<EstadoReservaDTO> datos = service.getAllEstadoReservas(page, size);
+        if (datos == null){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "No hay estados reservas registrados"
+            ));
+        }
+        return ResponseEntity.ok(datos);
     }
-
     @PostMapping("/createEstadoReserva")
     public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody EstadoReservaDTO estadoReserva, HttpServletRequest request){
         try{

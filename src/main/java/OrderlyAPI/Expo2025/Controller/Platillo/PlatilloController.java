@@ -3,10 +3,12 @@ package OrderlyAPI.Expo2025.Controller.Platillo;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatosDuplicados;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.PlatilloDTO;
+import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Services.Platillo.PlatilloService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -19,14 +21,30 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/apiPlatillo")
+@CrossOrigin
 public class PlatilloController {
 
     @Autowired
     private PlatilloService service;
 
     @GetMapping("/getDataPlatillo")
-    public List<PlatilloDTO> getData(){
-        return service.getAllPlatillos();
+    public ResponseEntity<Page<PlatilloDTO>> getData(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        if (size <= 0 || size > 50){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "El tamaño de la pagina debe estar entre 1 y 50"
+            ));
+            return ResponseEntity.ok(null);
+        }
+        Page<PlatilloDTO> datos = service.getAllPlatillos(page, size);
+        if (datos == null){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "No hay platillos registrados"
+            ));
+        }
+        return ResponseEntity.ok(datos);
     }
 
     @PostMapping("/createPlatillo")

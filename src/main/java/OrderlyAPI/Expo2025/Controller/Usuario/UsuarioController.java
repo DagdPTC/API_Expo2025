@@ -8,6 +8,7 @@ import OrderlyAPI.Expo2025.Services.Usuario.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -20,14 +21,30 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/apiUsuario")
+@CrossOrigin
 public class UsuarioController {
 
     @Autowired
     private UsuarioService service;
 
     @GetMapping("/getDataUsuario")
-    private List<UsuarioDTO> getData(){
-        return service.getAllUsuarios();
+    public ResponseEntity<Page<UsuarioDTO>> getData(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        if (size <= 0 || size > 50){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "El tamaño de la pagina debe estar entre 1 y 50"
+            ));
+            return ResponseEntity.ok(null);
+        }
+        Page<UsuarioDTO> usuarios = service.getAllUsuarios(page, size);
+        if (usuarios == null){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "No hay usuarios registrados"
+            ));
+        }
+        return ResponseEntity.ok(usuarios);
     }
 
     @PostMapping("/createUsuario")

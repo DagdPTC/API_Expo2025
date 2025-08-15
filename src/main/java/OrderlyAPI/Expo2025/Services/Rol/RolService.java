@@ -4,31 +4,36 @@ import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@CrossOrigin
 public class RolService {
 
     @Autowired
     private RolRepository repo;
 
 
-    public List<RolDTO> getAllRoles(){
-        List<RolEntity> roles = repo.findAll();
-        return roles.stream()
-                .map(this::convertirARolesDTO)
-                .collect(Collectors.toList());
+    public Page<RolDTO> getAllRoles(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<RolEntity> roles = repo.findAll(pageable);
+        return roles.map(this::convertirARolesDTO);
     }
 
-    public RolDTO createRol(RolDTO rolDTO){
-        if (rolDTO == null || rolDTO.getRol() == null || rolDTO.getRol().isEmpty()){
+    public RolDTO createRol(@Valid RolDTO rolDTO){
+        if (rolDTO == null){
             throw new IllegalArgumentException("El rol no puede ser nulo");
         }
         try{
@@ -41,7 +46,7 @@ public class RolService {
         }
     }
 
-    public RolDTO updateRol(Long id, RolDTO rol){
+    public RolDTO updateRol(Long id, @Valid RolDTO rol){
         RolEntity rolExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Rol no encontrado"));
 
         rolExistente.setRol(rol.getRol());
