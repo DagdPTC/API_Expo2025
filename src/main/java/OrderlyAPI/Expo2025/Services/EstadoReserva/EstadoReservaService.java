@@ -8,31 +8,35 @@ import OrderlyAPI.Expo2025.Models.DTO.EstadoReservaDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.EstadoReserva.EstadoReservaRepository;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@CrossOrigin
 public class EstadoReservaService {
 
     @Autowired
     private EstadoReservaRepository repo;
 
-
-    public List<EstadoReservaDTO> getAllEstadoReservas(){
-        List<EstadoReservaEntity> estados = repo.findAll();
-        return estados.stream()
-                .map(this::convertirAEstadoReservasDTO)
-                .collect(Collectors.toList());
+    public Page<EstadoReservaDTO> getAllEstadoReservas(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<EstadoReservaEntity> estados = repo.findAll(pageable);
+        return estados.map(this::convertirAEstadoReservasDTO);
     }
 
-    public EstadoReservaDTO createEstadoReserva(EstadoReservaDTO estadoReservaDTO){
-        if (estadoReservaDTO == null || estadoReservaDTO.getNomEstado() == null || estadoReservaDTO.getNomEstado().isEmpty()){
+    public EstadoReservaDTO createEstadoReserva( @Valid EstadoReservaDTO estadoReservaDTO){
+        if (estadoReservaDTO == null){
             throw new IllegalArgumentException("El estado reserva no puede ser nulo");
         }
         try{
@@ -45,7 +49,7 @@ public class EstadoReservaService {
         }
     }
 
-    public EstadoReservaDTO updateEstadoReserva(Long id, EstadoReservaDTO estadoReserva){
+    public EstadoReservaDTO updateEstadoReserva(Long id, @Valid EstadoReservaDTO estadoReserva){
         EstadoReservaEntity estadoReservaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Estado Reserva no encontrado"));
 
         estadoReservaExistente.setNomEstado(estadoReserva.getNomEstado());

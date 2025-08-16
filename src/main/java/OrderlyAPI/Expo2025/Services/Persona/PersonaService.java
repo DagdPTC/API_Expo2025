@@ -7,30 +7,35 @@ import OrderlyAPI.Expo2025.Models.DTO.PersonaDTO;
 import OrderlyAPI.Expo2025.Models.DTO.UsuarioDTO;
 import OrderlyAPI.Expo2025.Repositories.Persona.PersonaRepository;
 import OrderlyAPI.Expo2025.Repositories.Usuario.UsuarioRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@CrossOrigin
 public class PersonaService {
 
     @Autowired
     private PersonaRepository repo;
 
-    public List<PersonaDTO> getAllPersonas(){
-        List<PersonaEntity> personas = repo.findAll();
-        return personas.stream()
-                .map(this::convertirAPersonasDTO)
-                .collect(Collectors.toList());
+    public Page<PersonaDTO> getAllPersonas(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PersonaEntity> personas = repo.findAll(pageable);
+        return personas.map(this::convertirAPersonasDTO);
     }
 
-    public PersonaDTO createPersona(PersonaDTO personaDTO){
-        if (personaDTO == null || personaDTO.getPnombre() == null || personaDTO.getPnombre().isEmpty()){
+    public PersonaDTO createPersona(@Valid PersonaDTO personaDTO){
+        if (personaDTO == null){
             throw new IllegalArgumentException("La persona no puede ser nulo");
         }
         try{
@@ -43,7 +48,7 @@ public class PersonaService {
         }
     }
 
-    public PersonaDTO updatePersona(Long id, PersonaDTO persona){
+    public PersonaDTO updatePersona(Long id, @Valid PersonaDTO persona){
         PersonaEntity personaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Persona no encontrada"));
 
         personaExistente.setPnombre(persona.getPnombre());
@@ -51,6 +56,8 @@ public class PersonaService {
         personaExistente.setApellidoP(persona.getApellidoP());
         personaExistente.setApellidoM(persona.getApellidoM());
         personaExistente.setFechaN(persona.getFechaN());
+        personaExistente.setDireccion(persona.getDireccion());
+        personaExistente.setIdDoc(persona.getIdDoc());
 
         PersonaEntity personaActualizado = repo.save(personaExistente);
         return convertirAPersonasDTO(personaActualizado);
@@ -79,6 +86,8 @@ public class PersonaService {
         dto.setApellidoM(persona.getApellidoM());
         dto.setApellidoP(persona.getApellidoP());
         dto.setFechaN(persona.getFechaN());
+        dto.setDireccion(persona.getDireccion());
+        dto.setIdDoc(persona.getIdDoc());
         return dto;
     }
 
@@ -90,6 +99,8 @@ public class PersonaService {
         dto.setApellidoM(persona.getApellidoM());
         dto.setApellidoP(persona.getApellidoP());
         dto.setFechaN(persona.getFechaN());
+        dto.setDireccion(persona.getDireccion());
+        dto.setIdDoc(persona.getIdDoc());
         return dto;
     }
 }

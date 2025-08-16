@@ -4,31 +4,35 @@ import OrderlyAPI.Expo2025.Entities.Factura.FacturaEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.FacturaDTO;
 import OrderlyAPI.Expo2025.Repositories.Factura.FacturaRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@CrossOrigin
 public class FacturaService {
 
     @Autowired
     private FacturaRepository repo;
 
-
-    public java.util.List<FacturaDTO> getAllFacturas(){
-        List<FacturaEntity> factura = repo.findAll();
-        return factura.stream()
-                .map(this::convertirAFacturaDTO)
-                .collect(Collectors.toList());
+    public Page<FacturaDTO> getAllFacturas(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<FacturaEntity> factura = repo.findAll(pageable);
+        return factura.map(this::convertirAFacturaDTO);
     }
 
-    public FacturaDTO createFacturas(FacturaDTO facturaDTO){
-        if (facturaDTO == null || facturaDTO.getIdPedido() == null || facturaDTO.getIdPedido().describeConstable().isEmpty()){
+    public FacturaDTO createFacturas(@Valid FacturaDTO facturaDTO){
+        if (facturaDTO == null){
             throw new IllegalArgumentException("La factura no puede ser nulo");
         }
         try{
@@ -41,15 +45,12 @@ public class FacturaService {
         }
     }
 
-    public FacturaDTO updateFactura(Long id, FacturaDTO factura){
+    public FacturaDTO updateFactura(Long id, @Valid FacturaDTO factura){
         FacturaEntity facturaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Historial pedidos no encontrado"));
 
         facturaExistente.setIdPedido(factura.getIdPedido());
-        facturaExistente.setSubTotal(factura.getSubTotal());
         facturaExistente.setDescuento(factura.getDescuento());
-        facturaExistente.setPropina(factura.getPropina());
         facturaExistente.setTotal(factura.getTotal());
-        facturaExistente.setIdEmpleado(factura.getIdEmpleado());
 
         FacturaEntity facturaActualizado = repo.save(facturaExistente);
         return convertirAFacturaDTO(facturaActualizado);
@@ -75,11 +76,8 @@ public class FacturaService {
         FacturaEntity entity = new FacturaEntity();
         entity.setId(factura.getId());
         entity.setIdPedido(factura.getIdPedido());
-        entity.setSubTotal(factura.getSubTotal());
         entity.setDescuento(factura.getDescuento());
-        entity.setPropina(factura.getPropina());
         entity.setTotal(factura.getTotal());
-        entity.setIdEmpleado(factura.getIdEmpleado());
         return entity;
     }
 
@@ -87,11 +85,8 @@ public class FacturaService {
         FacturaDTO dto = new FacturaDTO();
         dto.setId(factura.getId());
         dto.setIdPedido(factura.getIdPedido());
-        dto.setSubTotal(factura.getSubTotal());
         dto.setDescuento(factura.getDescuento());
-        dto.setPropina(factura.getPropina());
         dto.setTotal(factura.getTotal());
-        dto.setIdEmpleado(factura.getIdEmpleado());
         return dto;
     }
 }

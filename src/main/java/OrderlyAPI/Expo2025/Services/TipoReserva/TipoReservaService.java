@@ -7,31 +7,35 @@ import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Models.DTO.TipoReservaDTO;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
 import OrderlyAPI.Expo2025.Repositories.TipoReserva.TipoReservaRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@CrossOrigin
 public class TipoReservaService {
 
     @Autowired
     private TipoReservaRepository repo;
 
-
-    public List<TipoReservaDTO> getAllTipoReservas(){
-        List<TipoReservaEntity> reservas = repo.findAll();
-        return reservas.stream()
-                .map(this::convertirATipoReservasDTO)
-                .collect(Collectors.toList());
+    public Page<TipoReservaDTO> getAllTipoReservas(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<TipoReservaEntity> reservas = repo.findAll(pageable);
+        return reservas.map(this::convertirATipoReservasDTO);
     }
 
-    public TipoReservaDTO createTipoReserva(TipoReservaDTO tipoReservaDTO){
-        if (tipoReservaDTO == null || tipoReservaDTO.getNomTipo() == null || tipoReservaDTO.getNomTipo().isEmpty()){
+    public TipoReservaDTO createTipoReserva(@Valid TipoReservaDTO tipoReservaDTO){
+        if (tipoReservaDTO == null){
             throw new IllegalArgumentException("El tipo reserva no puede ser nulo");
         }
         try{
@@ -44,7 +48,7 @@ public class TipoReservaService {
         }
     }
 
-    public TipoReservaDTO updateTipoReserva(Long id, TipoReservaDTO tipoReserva){
+    public TipoReservaDTO updateTipoReserva(Long id, @Valid TipoReservaDTO tipoReserva){
         TipoReservaEntity tipoReservaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Tipo Reserva no encontrado"));
 
         tipoReservaExistente.setNomTipo(tipoReserva.getNomTipo());

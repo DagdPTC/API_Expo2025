@@ -7,31 +7,35 @@ import OrderlyAPI.Expo2025.Models.DTO.PedidoDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Pedido.PedidoRepository;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@CrossOrigin
 public class PedidoService {
 
     @Autowired
     private PedidoRepository repo;
 
-
-    public List<PedidoDTO> getAllPedidos(){
-        List<PedidoEntity> pedidos = repo.findAll();
-        return pedidos.stream()
-                .map(this::convertirAPedidosDTO)
-                .collect(Collectors.toList());
+    public Page<PedidoDTO> getAllPedidos(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PedidoEntity> pedidos = repo.findAll(pageable);
+        return pedidos.map(this::convertirAPedidosDTO);
     }
 
-    public PedidoDTO createPedido(PedidoDTO pedidoDTO){
-        if (pedidoDTO == null || pedidoDTO.getNombrecliente() == null || pedidoDTO.getNombrecliente().describeConstable().isEmpty()){
+    public PedidoDTO createPedido(@Valid PedidoDTO pedidoDTO){
+        if (pedidoDTO == null){
             throw new IllegalArgumentException("El pedido no puede ser nulo");
         }
         try{
@@ -44,7 +48,7 @@ public class PedidoService {
         }
     }
 
-    public PedidoDTO updatePedido(Long id, PedidoDTO pedido){
+    public PedidoDTO updatePedido(Long id, @Valid PedidoDTO pedido){
         PedidoEntity pedidoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Pedido no encontrado"));
 
         pedidoExistente.setNombrecliente(pedido.getNombrecliente());
@@ -57,8 +61,7 @@ public class PedidoService {
         pedidoExistente.setTotalPedido(pedido.getTotalPedido());
         pedidoExistente.setSubtotal(pedido.getSubtotal());
         pedidoExistente.setPropina(pedido.getPropina());
-        pedidoExistente.setDescuento(pedido.getDescuento());
-        pedidoExistente.setTotalFactura(pedido.getTotalFactura());
+        pedidoExistente.setIdPlatillo(pedido.getIdPlatillo());
 
         PedidoEntity pedidoActualizado = repo.save(pedidoExistente);
         return convertirAPedidosDTO(pedidoActualizado);
@@ -94,8 +97,7 @@ public class PedidoService {
         dto.setTotalPedido(pedido.getTotalPedido());
         dto.setSubtotal(pedido.getSubtotal());
         dto.setPropina(pedido.getPropina());
-        dto.setDescuento(pedido.getDescuento());
-        dto.setTotalFactura(pedido.getTotalFactura());
+        dto.setIdPlatillo(pedido.getIdPlatillo());
         return dto;
     }
 
@@ -113,8 +115,7 @@ public class PedidoService {
         dto.setTotalPedido(pedido.getTotalPedido());
         dto.setSubtotal(pedido.getSubtotal());
         dto.setPropina(pedido.getPropina());
-        dto.setDescuento(pedido.getDescuento());
-        dto.setTotalFactura(pedido.getTotalFactura());
+        dto.setIdPlatillo(pedido.getIdPlatillo());
         return dto;
     }
 }

@@ -7,31 +7,35 @@ import OrderlyAPI.Expo2025.Models.DTO.EstadoPedidoDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.EstadoPedido.EstadoPedidoRepository;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@CrossOrigin
 public class EstadoPedidoService {
 
     @Autowired
     private EstadoPedidoRepository repo;
 
-
-    public List<EstadoPedidoDTO> getAllEstadoPedidos(){
-        List<EstadoPedidoEntity> estados = repo.findAll();
-        return estados.stream()
-                .map(this::convertirAEstadoPedidosDTO)
-                .collect(Collectors.toList());
+    public Page<EstadoPedidoDTO> getAllEstadoPedidos(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<EstadoPedidoEntity> estados = repo.findAll(pageable);
+        return estados.map(this::convertirAEstadoPedidosDTO);
     }
 
-    public EstadoPedidoDTO createEstadoPedido(EstadoPedidoDTO estadoPedidoDTO){
-        if (estadoPedidoDTO == null || estadoPedidoDTO.getNomEstado() == null || estadoPedidoDTO.getNomEstado().isEmpty()){
+    public EstadoPedidoDTO createEstadoPedido(@Valid EstadoPedidoDTO estadoPedidoDTO){
+        if (estadoPedidoDTO == null){
             throw new IllegalArgumentException("El estado pedido no puede ser nulo");
         }
         try{
@@ -44,7 +48,7 @@ public class EstadoPedidoService {
         }
     }
 
-    public EstadoPedidoDTO updateEstadoPedido(Long id, EstadoPedidoDTO estadoPedido){
+    public EstadoPedidoDTO updateEstadoPedido(Long id, @Valid EstadoPedidoDTO estadoPedido){
         EstadoPedidoEntity estadoPedidoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Estado Pedido no encontrado"));
 
         estadoPedidoExistente.setNomEstado(estadoPedido.getNomEstado());

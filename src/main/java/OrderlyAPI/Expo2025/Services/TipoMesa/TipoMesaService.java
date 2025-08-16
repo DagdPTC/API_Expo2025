@@ -6,30 +6,35 @@ import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Models.DTO.TipoMesaDTO;
 import OrderlyAPI.Expo2025.Repositories.TipoMesa.TipoMesaRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@CrossOrigin
 public class TipoMesaService {
 
     @Autowired
     private TipoMesaRepository repo;
 
-    public List<TipoMesaDTO> getAllTipoMesas(){
-        List<TipoMesaEntity> tipos = repo.findAll();
-        return tipos.stream()
-                .map(this::convertirTipoMesaDTO)
-                .collect(Collectors.toList());
+    public Page<TipoMesaDTO> getAllTipoMesas(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<TipoMesaEntity> tipos = repo.findAll(pageable);
+        return tipos.map(this::convertirTipoMesaDTO);
     }
 
-    public TipoMesaDTO createTipomesa(TipoMesaDTO tipoMesaDTO){
-        if (tipoMesaDTO == null || tipoMesaDTO.getNombre() == null || tipoMesaDTO.getNombre().isEmpty()){
+    public TipoMesaDTO createTipomesa(@Valid TipoMesaDTO tipoMesaDTO){
+        if (tipoMesaDTO == null){
             throw new IllegalArgumentException("El Tipo mesa no puede ser nulo");
         }
         try{
@@ -42,7 +47,7 @@ public class TipoMesaService {
         }
     }
 
-    public TipoMesaDTO updatetipoMesa(Long id, TipoMesaDTO tipoMesa){
+    public TipoMesaDTO updatetipoMesa(Long id, @Valid TipoMesaDTO tipoMesa){
         TipoMesaEntity tipomesaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Tipo mesa no encontrado"));
 
         tipomesaExistente.setNombre(tipoMesa.getNombre());

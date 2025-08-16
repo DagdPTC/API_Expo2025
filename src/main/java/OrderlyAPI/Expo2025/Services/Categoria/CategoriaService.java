@@ -7,30 +7,35 @@ import OrderlyAPI.Expo2025.Models.DTO.CategoriaDTO;
 import OrderlyAPI.Expo2025.Models.DTO.UsuarioDTO;
 import OrderlyAPI.Expo2025.Repositories.Categoria.CategoriaRepository;
 import OrderlyAPI.Expo2025.Repositories.Usuario.UsuarioRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@CrossOrigin
 public class CategoriaService {
 
     @Autowired
     private CategoriaRepository repo;
 
-    public List<CategoriaDTO> getAllCategorias(){
-        List<CategoriaEntity> roles = repo.findAll();
-        return roles.stream()
-                .map(this::convertirACategoriasDTO)
-                .collect(Collectors.toList());
+    public Page<CategoriaDTO> getAllCategorias(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<CategoriaEntity> roles = repo.findAll(pageable);
+        return roles.map(this::convertirACategoriasDTO);
     }
 
-    public CategoriaDTO createCategoria(CategoriaDTO categoriaDTO){
-        if (categoriaDTO == null || categoriaDTO.getNomCategoria() == null || categoriaDTO.getNomCategoria().isEmpty()){
+    public CategoriaDTO createCategoria(@Valid CategoriaDTO categoriaDTO){
+        if (categoriaDTO == null){
             throw new IllegalArgumentException("La categoria no puede ser nulo");
         }
         try{
@@ -43,7 +48,7 @@ public class CategoriaService {
         }
     }
 
-    public CategoriaDTO updateCategoria(Long id, CategoriaDTO categoria){
+    public CategoriaDTO updateCategoria(Long id, @Valid CategoriaDTO categoria){
         CategoriaEntity categoriaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Categoria no encontrada"));
 
         categoriaExistente.setNomCategoria(categoria.getNomCategoria());

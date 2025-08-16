@@ -6,30 +6,35 @@ import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.DocumentoIdentidadDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.DocumentoIdentidad.DocumentoIdentidadRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@CrossOrigin
 public class DocumentoIdentidadService {
 
     @Autowired
     private DocumentoIdentidadRepository repo;
 
-    public List<DocumentoIdentidadDTO> getAllDocumentosIdentidades(){
-        List<DocumentoIdentidadEntity> documentos = repo.findAll();
-        return documentos.stream()
-                .map(this::convertirADocumentosIdentidadesDTO)
-                .collect(Collectors.toList());
+    public Page<DocumentoIdentidadDTO> getAllDocumentosIdentidades(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<DocumentoIdentidadEntity> documentos = repo.findAll(pageable);
+        return documentos.map(this::convertirADocumentosIdentidadesDTO);
     }
 
-    public DocumentoIdentidadDTO createDocumentoIdentidad(DocumentoIdentidadDTO documentoIdentidadDTO){
-        if (documentoIdentidadDTO == null || documentoIdentidadDTO.getNumDoc() == null || documentoIdentidadDTO.getNumDoc().isEmpty()){
+    public DocumentoIdentidadDTO createDocumentoIdentidad(@Valid DocumentoIdentidadDTO documentoIdentidadDTO){
+        if (documentoIdentidadDTO == null){
             throw new IllegalArgumentException("El Documento Identidad no puede ser nulo");
         }
         try{
@@ -42,11 +47,10 @@ public class DocumentoIdentidadService {
         }
     }
 
-    public DocumentoIdentidadDTO updateDocumentoIdentidad(Long id, DocumentoIdentidadDTO documentoIdentidad){
+    public DocumentoIdentidadDTO updateDocumentoIdentidad(Long id, @Valid DocumentoIdentidadDTO documentoIdentidad){
         DocumentoIdentidadEntity documentoIdentidadExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Documento Identidad no encontrado"));
 
-        documentoIdentidadExistente.setIdpersona(documentoIdentidad.getIdpersona());
-        documentoIdentidadExistente.setTipoDoc(documentoIdentidad.getTipoDoc());
+        documentoIdentidadExistente.setIdtipoDoc(documentoIdentidad.getIdtipoDoc());
         documentoIdentidadExistente.setNumDoc(documentoIdentidad.getNumDoc());
 
         DocumentoIdentidadEntity documentoIdentidadActualizado = repo.save(documentoIdentidadExistente);
@@ -72,8 +76,7 @@ public class DocumentoIdentidadService {
     public DocumentoIdentidadEntity convertirADocumentosIdentidadesEntity(DocumentoIdentidadDTO documentoIdentidad){
         DocumentoIdentidadEntity dto = new DocumentoIdentidadEntity();
         dto.setId(documentoIdentidad.getId());
-        dto.setIdpersona(documentoIdentidad.getIdpersona());
-        dto.setTipoDoc(documentoIdentidad.getTipoDoc());
+        dto.setIdtipoDoc(documentoIdentidad.getIdtipoDoc());
         dto.setNumDoc(documentoIdentidad.getNumDoc());
         return dto;
     }
@@ -81,8 +84,7 @@ public class DocumentoIdentidadService {
     public DocumentoIdentidadDTO convertirADocumentosIdentidadesDTO(DocumentoIdentidadEntity documentoIdentidad){
         DocumentoIdentidadDTO dto = new DocumentoIdentidadDTO();
         dto.setId(documentoIdentidad.getId());
-        dto.setIdpersona(documentoIdentidad.getIdpersona());
-        dto.setTipoDoc(documentoIdentidad.getTipoDoc());
+        dto.setIdtipoDoc(documentoIdentidad.getIdtipoDoc());
         dto.setNumDoc(documentoIdentidad.getNumDoc());
         return dto;
     }

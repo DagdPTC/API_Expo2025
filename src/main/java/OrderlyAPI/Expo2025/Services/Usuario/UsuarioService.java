@@ -50,7 +50,6 @@ public class UsuarioService {
     public UsuarioDTO updateUsuario( @Valid Long id, UsuarioDTO usuario){
         UsuarioEntity usuarioExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Usuario no encontrado"));
 
-        usuarioExistente.setNombre(usuario.getNombre());
         usuarioExistente.setContrasenia(usuario.getContrasenia());
         usuarioExistente.setRolId(usuario.getRolId());
         usuarioExistente.setCorreo(usuario.getCorreo());
@@ -77,7 +76,6 @@ public class UsuarioService {
     public UsuarioDTO convertirAUsuariosDTO(UsuarioEntity usuario){
         UsuarioDTO dto = new UsuarioDTO();
         dto.setId(usuario.getId());
-        dto.setNombre(usuario.getNombre());
         dto.setContrasenia(usuario.getContrasenia());
         dto.setRolId(usuario.getRolId());
         dto.setCorreo(usuario.getCorreo());
@@ -87,7 +85,6 @@ public class UsuarioService {
     public UsuarioEntity convertirAUsuariosEntity(UsuarioDTO usuario){
         UsuarioEntity dto = new UsuarioEntity();
         dto.setId(usuario.getId());
-        dto.setNombre(usuario.getNombre());
         dto.setContrasenia(usuario.getContrasenia());
         dto.setRolId(usuario.getRolId());
         dto.setCorreo(usuario.getCorreo());

@@ -6,31 +6,35 @@ import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.HistorialPedidoDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.HistorialPedido.HistorialPedidoRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@CrossOrigin
 public class HistorialPedidoService {
 
     @Autowired
     private HistorialPedidoRepository repo;
 
-
-    public List<HistorialPedidoDTO> getAllhistorialpedido(){
-        List<HistorialPedidoEntity> historialpedido = repo.findAll();
-        return historialpedido.stream()
-                .map(this::convertirAHistorialPedidoDTO)
-                .collect(Collectors.toList());
+    public Page<HistorialPedidoDTO> getAllhistorialpedido(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<HistorialPedidoEntity> historialpedido = repo.findAll(pageable);
+        return historialpedido.map(this::convertirAHistorialPedidoDTO);
     }
 
-    public HistorialPedidoDTO createHistorialPediso(HistorialPedidoDTO historialpedidoDTO){
-        if (historialpedidoDTO == null || historialpedidoDTO.getIdFactura() == null || historialpedidoDTO.getIdFactura().describeConstable().isEmpty()){
+    public HistorialPedidoDTO createHistorialPediso(@Valid HistorialPedidoDTO historialpedidoDTO){
+        if (historialpedidoDTO == null){
             throw new IllegalArgumentException("El historila pedido no puede ser nulo");
         }
         try{
@@ -43,10 +47,9 @@ public class HistorialPedidoService {
         }
     }
 
-    public HistorialPedidoDTO updateHistorialpedido(Long id, HistorialPedidoDTO historialpedido){
+    public HistorialPedidoDTO updateHistorialpedido(Long id, @Valid HistorialPedidoDTO historialpedido){
         HistorialPedidoEntity historialpedidoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Historial pedido no encontrado"));
 
-        historialpedidoExistente.setIdPlatillo(historialpedido.getIdPlatillo());
         historialpedidoExistente.setIdPedido(historialpedido.getIdPedido());
         historialpedidoExistente.setIdFactura(historialpedido.getIdFactura());
 
@@ -73,7 +76,6 @@ public class HistorialPedidoService {
     public HistorialPedidoEntity convertirAHistorialPedidoEntity(HistorialPedidoDTO dto){
         HistorialPedidoEntity entity = new HistorialPedidoEntity();
         entity.setId(dto.getId());
-        entity.setIdPlatillo(dto.getIdPlatillo());
         entity.setIdPedido(dto.getIdPedido());
         entity.setIdFactura(dto.getIdFactura());
         return entity;
@@ -82,7 +84,6 @@ public class HistorialPedidoService {
     public HistorialPedidoDTO convertirAHistorialPedidoDTO(HistorialPedidoEntity historialpedido){
         HistorialPedidoDTO dto = new HistorialPedidoDTO();
         dto.setId(historialpedido.getId());
-        dto.setIdPlatillo(historialpedido.getIdPlatillo());
         dto.setIdPedido(historialpedido.getIdPedido());
         dto.setIdFactura(historialpedido.getIdFactura());
         return dto;

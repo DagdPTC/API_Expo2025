@@ -4,31 +4,36 @@ import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.PlatilloDTO;
 import OrderlyAPI.Expo2025.Repositories.Platillo.PlatilloRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@CrossOrigin
 public class PlatilloService {
 
     @Autowired
     private PlatilloRepository repo;
 
 
-    public List<PlatilloDTO> getAllPlatillos(){
-        List<PlatilloEntity> platillos = repo.findAll();
-        return platillos.stream()
-                .map(this::convertirAPlatillosDTO)
-                .collect(Collectors.toList());
+    public Page<PlatilloDTO> getAllPlatillos(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PlatilloEntity> platillos = repo.findAll(pageable);
+        return platillos.map(this::convertirAPlatillosDTO);
     }
 
-    public PlatilloDTO createPlatillo(PlatilloDTO platilloDTO){
-        if (platilloDTO == null || platilloDTO.getNomPlatillo() == null || platilloDTO.getNomPlatillo().isEmpty()){
+    public PlatilloDTO createPlatillo(@Valid PlatilloDTO platilloDTO){
+        if (platilloDTO == null){
             throw new IllegalArgumentException("El nombre del platillo no puede ser nulo");
         }
         try{
@@ -41,13 +46,13 @@ public class PlatilloService {
         }
     }
 
-    public PlatilloDTO updatePlatillo(Long id, PlatilloDTO platillo){
+    public PlatilloDTO updatePlatillo(Long id, @Valid PlatilloDTO platillo){
         PlatilloEntity platilloExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Platillo no encontrado"));
 
         platilloExistente.setNomPlatillo(platillo.getNomPlatillo());
         platilloExistente.setDescripcion(platillo.getDescripcion());
         platilloExistente.setPrecio(platillo.getPrecio());
-        platilloExistente.setTiempoPreparacion(platillo.getTiempoPreparacion());
+        platilloExistente.setIdCategoria(platillo.getIdCategoria());
 
         PlatilloEntity platilloActualizado = repo.save(platilloExistente);
         return convertirAPlatillosDTO(platilloActualizado);
@@ -75,7 +80,7 @@ public class PlatilloService {
         dto.setNomPlatillo(platillo.getNomPlatillo());
         dto.setDescripcion(platillo.getDescripcion());
         dto.setPrecio(platillo.getPrecio());
-        dto.setTiempoPreparacion(platillo.getTiempoPreparacion());
+        dto.setIdCategoria(platillo.getIdCategoria());
         return dto;
     }
 
@@ -85,7 +90,7 @@ public class PlatilloService {
         dto.setNomPlatillo(platillo.getNomPlatillo());
         dto.setDescripcion(platillo.getDescripcion());
         dto.setPrecio(platillo.getPrecio());
-        dto.setTiempoPreparacion(platillo.getTiempoPreparacion());
+        dto.setIdCategoria(platillo.getIdCategoria());
         return dto;
     }
 }

@@ -7,31 +7,36 @@ import OrderlyAPI.Expo2025.Models.DTO.EstadoMesaDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.EstadoMesa.EstadoMesaRepository;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@CrossOrigin
 public class EstadoMesaService {
 
     @Autowired
     private EstadoMesaRepository repo;
 
 
-    public List<EstadoMesaDTO> getAllEstadoMesas(){
-        List<EstadoMesaEntity> estados = repo.findAll();
-        return estados.stream()
-                .map(this::convertirAEstadosMesasDTO)
-                .collect(Collectors.toList());
+    public Page<EstadoMesaDTO> getAllEstadoMesas(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<EstadoMesaEntity> estados = repo.findAll(pageable);
+        return estados.map(this::convertirAEstadosMesasDTO);
     }
 
-    public EstadoMesaDTO createEstadoMesa(EstadoMesaDTO estadoMesaDTO){
-        if (estadoMesaDTO == null || estadoMesaDTO.getEstadoMesa() == null || estadoMesaDTO.getEstadoMesa().isEmpty()){
+    public EstadoMesaDTO createEstadoMesa(@Valid EstadoMesaDTO estadoMesaDTO){
+        if (estadoMesaDTO == null){
             throw new IllegalArgumentException("El estado mesa no puede ser nulo");
         }
         try{
@@ -44,7 +49,7 @@ public class EstadoMesaService {
         }
     }
 
-    public EstadoMesaDTO updateEstadoMesa(Long id, EstadoMesaDTO estadoMesa){
+    public EstadoMesaDTO updateEstadoMesa(Long id, @Valid EstadoMesaDTO estadoMesa){
         EstadoMesaEntity estadoMesaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Estado Mesa no encontrado"));
 
         estadoMesaExistente.setEstadoMesa(estadoMesa.getEstadoMesa());

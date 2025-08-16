@@ -6,30 +6,35 @@ import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.EmpleadoDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Empleado.EmpleadoRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@CrossOrigin
 public class EmpleadoService {
 
     @Autowired
     private EmpleadoRepository repo;
 
-    public List<EmpleadoDTO> getAllEmpleados(){
-        List<EmpleadoEntity> roles = repo.findAll();
-        return roles.stream()
-                .map(this::convertirAEmpleadosDTO)
-                .collect(Collectors.toList());
+    public Page<EmpleadoDTO> getAllEmpleados(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<EmpleadoEntity> roles = repo.findAll(pageable);
+        return roles.map(this::convertirAEmpleadosDTO);
     }
 
-    public EmpleadoDTO createEmpleado(EmpleadoDTO empleadoDTO){
-        if (empleadoDTO == null || empleadoDTO.getIdUsuario() == null || empleadoDTO.getIdUsuario().describeConstable().isEmpty()){
+    public EmpleadoDTO createEmpleado(@Valid EmpleadoDTO empleadoDTO){
+        if (empleadoDTO == null){
             throw new IllegalArgumentException("El Empleado no puede ser nulo");
         }
         try{
@@ -42,13 +47,12 @@ public class EmpleadoService {
         }
     }
 
-    public EmpleadoDTO updateEmpleado(Long id, EmpleadoDTO empleado){
+    public EmpleadoDTO updateEmpleado(Long id, @Valid EmpleadoDTO empleado){
         EmpleadoEntity empleadoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Empleado no encontrado"));
 
         empleadoExistente.setIdPersona(empleado.getIdPersona());
         empleadoExistente.setIdUsuario(empleado.getIdUsuario());
         empleadoExistente.setFContratacion(empleado.getFContratacion());
-        empleadoExistente.setDireccion(empleado.getDireccion());
 
         EmpleadoEntity empleadoActualizado = repo.save(empleadoExistente);
         return convertirAEmpleadosDTO(empleadoActualizado);
@@ -76,7 +80,6 @@ public class EmpleadoService {
         dto.setIdPersona(empleado.getIdPersona());
         dto.setIdUsuario(empleado.getIdUsuario());
         dto.setFContratacion(empleado.getFContratacion());
-        dto.setDireccion(empleado.getDireccion());
         return dto;
     }
 
@@ -86,7 +89,6 @@ public class EmpleadoService {
         dto.setIdPersona(empleado.getIdPersona());
         dto.setIdUsuario(empleado.getIdUsuario());
         dto.setFContratacion(empleado.getFContratacion());
-        dto.setDireccion(empleado.getDireccion());
         return dto;
     }
 }

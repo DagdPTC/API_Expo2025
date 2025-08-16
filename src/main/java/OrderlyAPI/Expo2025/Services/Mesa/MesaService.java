@@ -7,30 +7,34 @@ import OrderlyAPI.Expo2025.Models.DTO.MesaDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Mesa.MesaRepository;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@CrossOrigin
 public class MesaService {
 
     @Autowired
     private MesaRepository repo;
 
-
-    public List<MesaDTO> getAllMesas(){
-        List<MesaEntity> mesas = repo.findAll();
-        return mesas.stream()
-                .map(this::convertirAMesasDTO)
-                .collect(Collectors.toList());
+    public Page<MesaDTO> getAllMesas(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<MesaEntity> mesas = repo.findAll(pageable);
+        return mesas.map(this::convertirAMesasDTO);
     }
 
-    public MesaDTO createMesa(MesaDTO mesaDTO){
+    public MesaDTO createMesa(@Valid MesaDTO mesaDTO){
         if (mesaDTO == null || mesaDTO.getNomMesa() == null || mesaDTO.getNomMesa().describeConstable().isEmpty()){
             throw new IllegalArgumentException("La mesa no puede ser nulo");
         }
@@ -44,11 +48,12 @@ public class MesaService {
         }
     }
 
-    public MesaDTO updateMesa(Long id, MesaDTO mesa){
+    public MesaDTO updateMesa(Long id, @Valid MesaDTO mesa){
         MesaEntity mesaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Mesa no encontrado"));
 
         mesaExistente.setNomMesa(mesa.getNomMesa());
         mesaExistente.setIdTipoMesa(mesa.getIdTipoMesa());
+        mesaExistente.setIdEstadoMesa(mesa.getIdEstadoMesa());
 
         MesaEntity mesaActualizado = repo.save(mesaExistente);
         return convertirAMesasDTO(mesaActualizado);
@@ -75,7 +80,7 @@ public class MesaService {
         dto.setId(mesa.getId());
         dto.setNomMesa(mesa.getNomMesa());
         dto.setIdTipoMesa(mesa.getIdTipoMesa());
-
+        dto.setIdEstadoMesa(mesa.getIdEstadoMesa());
         return dto;
     }
 
@@ -84,6 +89,7 @@ public class MesaService {
         dto.setId(mesa.getId());
         dto.setNomMesa(mesa.getNomMesa());
         dto.setIdTipoMesa(mesa.getIdTipoMesa());
+        dto.setIdEstadoMesa(mesa.getIdEstadoMesa());
         return dto;
     }
 }
