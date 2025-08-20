@@ -1,5 +1,6 @@
 package OrderlyAPI.Expo2025.Entities.Platillo;
 
+import OrderlyAPI.Expo2025.Entities.Categoria.CategoriaEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -29,6 +30,7 @@ public class PlatilloEntity {
     @Column(name = "PRECIO")
     private double Precio;
 
-    @Column(name = "IDCATEGORIA")
-    private Long IdCategoria;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDCATEGORIA", referencedColumnName = "IDCATEGORIA")
+    private CategoriaEntity categoria;
 }

@@ -1,9 +1,12 @@
 package OrderlyAPI.Expo2025.Services.Platillo;
 
+import OrderlyAPI.Expo2025.Entities.Categoria.CategoriaEntity;
 import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.PlatilloDTO;
 import OrderlyAPI.Expo2025.Repositories.Platillo.PlatilloRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +14,12 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.orm.jpa.EntityManagerFactoryUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +32,8 @@ public class PlatilloService {
     @Autowired
     private PlatilloRepository repo;
 
+    @PersistenceContext
+    EntityManager entityManager;
 
     public Page<PlatilloDTO> getAllPlatillos(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
@@ -52,7 +61,10 @@ public class PlatilloService {
         platilloExistente.setNomPlatillo(platillo.getNomPlatillo());
         platilloExistente.setDescripcion(platillo.getDescripcion());
         platilloExistente.setPrecio(platillo.getPrecio());
-        platilloExistente.setIdCategoria(platillo.getIdCategoria());
+        if (platillo.getIdCate() == null){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"No se pudo cargar la categoria");
+        }
+        CategoriaEntity categoria = entityManager.getReference(CategoriaEntity.class,platillo.getIdCate());
 
         PlatilloEntity platilloActualizado = repo.save(platilloExistente);
         return convertirAPlatillosDTO(platilloActualizado);
@@ -80,7 +92,7 @@ public class PlatilloService {
         dto.setNomPlatillo(platillo.getNomPlatillo());
         dto.setDescripcion(platillo.getDescripcion());
         dto.setPrecio(platillo.getPrecio());
-        dto.setIdCategoria(platillo.getIdCategoria());
+        dto.setCategoria(entityManager.getReference(CategoriaEntity.class, platillo.getIdCate()));
         return dto;
     }
 
@@ -90,7 +102,7 @@ public class PlatilloService {
         dto.setNomPlatillo(platillo.getNomPlatillo());
         dto.setDescripcion(platillo.getDescripcion());
         dto.setPrecio(platillo.getPrecio());
-        dto.setIdCategoria(platillo.getIdCategoria());
+        dto.setIdCate(platillo.getCategoria().getId());
         return dto;
     }
 }

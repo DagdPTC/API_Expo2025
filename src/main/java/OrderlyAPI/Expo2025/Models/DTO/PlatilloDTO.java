@@ -24,5 +24,7 @@ public class PlatilloDTO {
     @DecimalMax(value = "99999999.99", message = "El precio debe ser menor de 99999999.99")
     private double Precio;
 
-    private Long IdCategoria;
+    private Long IdCate;
+
+    private String NombrerCate;
 }

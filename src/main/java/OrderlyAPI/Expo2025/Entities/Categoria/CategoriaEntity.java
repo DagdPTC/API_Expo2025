@@ -1,5 +1,6 @@
 package OrderlyAPI.Expo2025.Entities.Categoria;
 
+import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -8,6 +9,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.List;
 
 @Entity
 @Table(name = "CATEGORIA")
@@ -21,4 +24,7 @@ public class CategoriaEntity {
 
     @Column(name = "NOMBRECATEGORIA", unique = true)
     private String NomCategoria;
+
+    @OneToMany(mappedBy = "categoria", cascade = CascadeType.ALL)
+    private List<PlatilloEntity> categoria;
 }
