@@ -1,11 +1,15 @@
 package OrderlyAPI.Expo2025.Services.DocumentoIdentidad;
 
+import OrderlyAPI.Expo2025.Entities.Categoria.CategoriaEntity;
 import OrderlyAPI.Expo2025.Entities.DocumentoIdentidad.DocumentoIdentidadEntity;
 import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.DocumentoIdentidadDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.DocumentoIdentidad.DocumentoIdentidadRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +30,10 @@ public class DocumentoIdentidadService {
 
     @Autowired
     private DocumentoIdentidadRepository repo;
+
+    @PersistenceContext
+    EntityManager entityManager;
+
 
     public Page<DocumentoIdentidadDTO> getAllDocumentosIdentidades(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
@@ -76,7 +84,7 @@ public class DocumentoIdentidadService {
     public DocumentoIdentidadEntity convertirADocumentosIdentidadesEntity(DocumentoIdentidadDTO documentoIdentidad){
         DocumentoIdentidadEntity dto = new DocumentoIdentidadEntity();
         dto.setId(documentoIdentidad.getId());
-        dto.setIdtipoDoc(documentoIdentidad.getIdtipoDoc());
+        dto.setIdtipoDoc(entityManager.getReference(TipoDocumentoEntity.class, documentoIdentidad.getIdtipoDoc()));
         dto.setNumDoc(documentoIdentidad.getNumDoc());
         return dto;
     }
