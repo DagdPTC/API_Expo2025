@@ -1,11 +1,14 @@
 package OrderlyAPI.Expo2025.Services.Usuario;
 
 import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import OrderlyAPI.Expo2025.Entities.Usuario.UsuarioEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Models.DTO.UsuarioDTO;
 import OrderlyAPI.Expo2025.Repositories.Usuario.UsuarioRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +29,9 @@ public class UsuarioService {
 
     @Autowired
     private UsuarioRepository repo;
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     public Page<UsuarioDTO> getAllUsuarios(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
@@ -51,7 +57,7 @@ public class UsuarioService {
         UsuarioEntity usuarioExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Usuario no encontrado"));
 
         usuarioExistente.setContrasenia(usuario.getContrasenia());
-        usuarioExistente.setRolId(usuario.getRolId());
+        usuarioExistente.setRol(usuarioExistente.getRol());
         usuarioExistente.setCorreo(usuario.getCorreo());
 
         UsuarioEntity usuarioActualizado = repo.save(usuarioExistente);
@@ -77,7 +83,7 @@ public class UsuarioService {
         UsuarioDTO dto = new UsuarioDTO();
         dto.setId(usuario.getId());
         dto.setContrasenia(usuario.getContrasenia());
-        dto.setRolId(usuario.getRolId());
+        dto.setRolId(usuario.getRol().getId());
         dto.setCorreo(usuario.getCorreo());
         return dto;
     }
@@ -86,7 +92,7 @@ public class UsuarioService {
         UsuarioEntity dto = new UsuarioEntity();
         dto.setId(usuario.getId());
         dto.setContrasenia(usuario.getContrasenia());
-        dto.setRolId(usuario.getRolId());
+        dto.setRol(entityManager.getReference(RolEntity.class, usuario.getRolId()));
         dto.setCorreo(usuario.getCorreo());
         return dto;
     }

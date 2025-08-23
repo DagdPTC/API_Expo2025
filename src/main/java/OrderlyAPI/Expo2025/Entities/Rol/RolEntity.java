@@ -1,10 +1,14 @@
 package OrderlyAPI.Expo2025.Entities.Rol;
 
+import OrderlyAPI.Expo2025.Entities.Persona.PersonaEntity;
+import OrderlyAPI.Expo2025.Entities.Usuario.UsuarioEntity;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.List;
 
 @Entity
 @Table(name = "ROL")
@@ -18,4 +22,7 @@ public class RolEntity {
 
     @Column(name = "ROL", unique = true)
     private String rol;
+
+    @OneToMany(mappedBy = "ROL", cascade = CascadeType.ALL)
+    private List<UsuarioEntity> urol;
 }

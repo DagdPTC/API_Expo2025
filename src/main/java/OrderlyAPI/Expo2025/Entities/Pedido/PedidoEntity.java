@@ -1,5 +1,13 @@
 package OrderlyAPI.Expo2025.Entities.Pedido;
 
+import OrderlyAPI.Expo2025.Entities.Empleado.EmpleadoEntity;
+import OrderlyAPI.Expo2025.Entities.EstadoPedido.EstadoPedidoEntity;
+import OrderlyAPI.Expo2025.Entities.Factura.FacturaEntity;
+import OrderlyAPI.Expo2025.Entities.HistorialPedido.HistorialPedidoEntity;
+import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
+import OrderlyAPI.Expo2025.Entities.Persona.PersonaEntity;
+import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -10,6 +18,7 @@ import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "PEDIDO")
@@ -24,17 +33,8 @@ public class PedidoEntity {
     @Column(name = "NOMBRECLIENTE")
     private String Nombrecliente;
 
-    @Column(name = "IDMESA")
-    private Long IdMesa;
-
-    @Column(name = "IDEMPLEADO")
-    private Long IdEmpleado;
-
     @Column(name = "FECHAPEDIDO")
     private LocalDateTime FPedido;
-
-    @Column(name = "IDESTADOPEDIDO")
-    private Long IdEstadoPedido;
 
     @Column(name = "OBSERVACIONES")
     private String Observaciones;
@@ -51,6 +51,25 @@ public class PedidoEntity {
     @Column(name = "PROPINA")
     private double Propina;
 
-    @Column(name = "IDPLATILLO")
-    private Long IdPlatillo;
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
+    private List<FacturaEntity> pedido;
+
+    @OneToMany(mappedBy = "pedidos", cascade = CascadeType.ALL)
+    private List<HistorialPedidoEntity> pedidos;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDMESA", referencedColumnName = "IDMESA")
+    private MesaEntity mesas;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDEMPLEADO", referencedColumnName = "IDEMPLEADO")
+    private EmpleadoEntity empleado;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDESTADOPEDIDO", referencedColumnName = "IDESTADOPEDIDO")
+    private EstadoPedidoEntity estpedido;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDPLATILLO", referencedColumnName = "IDPLATILLO")
+    private PlatilloEntity platillo;
 }

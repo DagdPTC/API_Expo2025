@@ -1,5 +1,8 @@
 package OrderlyAPI.Expo2025.Entities.Persona;
 
+import OrderlyAPI.Expo2025.Entities.Categoria.CategoriaEntity;
+import OrderlyAPI.Expo2025.Entities.DocumentoIdentidad.DocumentoIdentidadEntity;
+import OrderlyAPI.Expo2025.Entities.Empleado.EmpleadoEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -10,6 +13,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "PERSONA")
@@ -39,6 +43,10 @@ public class PersonaEntity {
     @Column(name = "DIRECCION")
     private String Direccion;
 
-    @Column(name = "IDDOCUMENTO")
-    private Long IdDoc;
+    @OneToMany(mappedBy = "persona", cascade = CascadeType.ALL)
+    private List<EmpleadoEntity> persona;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDDOCUMENTO", referencedColumnName = "IDDOCUMENTO")
+    private DocumentoIdentidadEntity documento;
 }

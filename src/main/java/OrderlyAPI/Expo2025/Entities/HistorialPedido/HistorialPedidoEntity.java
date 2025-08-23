@@ -1,5 +1,7 @@
 package OrderlyAPI.Expo2025.Entities.HistorialPedido;
 
+import OrderlyAPI.Expo2025.Entities.Factura.FacturaEntity;
+import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,9 +22,11 @@ public class HistorialPedidoEntity {
     @NotBlank(message = "El campo no puede ser nulo")
     private Long Id;
 
-    @Column(name = "IDPEDIDO", unique = true)
-    private Long IdPedido;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDPEDIDO", referencedColumnName = "IDPEDIDO")
+    private PedidoEntity pedidos;
 
-    @Column(name = "IDFACTURA", unique = true)
-    private Long IdFactura;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDFACTURA", referencedColumnName = "IDFACTURA")
+    private FacturaEntity factura;
 }

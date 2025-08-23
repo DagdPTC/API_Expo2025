@@ -1,6 +1,8 @@
 package OrderlyAPI.Expo2025.Entities.DocumentoIdentidad;
 
 import OrderlyAPI.Expo2025.Entities.Categoria.CategoriaEntity;
+import OrderlyAPI.Expo2025.Entities.Persona.PersonaEntity;
+import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
 import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
@@ -13,6 +15,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "DOCUMENTOIDENTIDAD")
@@ -26,6 +29,9 @@ public class DocumentoIdentidadEntity {
 
     @Column(name = "NUMERODOCUMENTO", unique = true)
     private String numDoc;
+
+    @OneToMany(mappedBy = "documento", cascade = CascadeType.ALL)
+    private List<PersonaEntity> documento;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IDTIPODOCUMENTO", referencedColumnName = "IDTIPODOCUMENTO")

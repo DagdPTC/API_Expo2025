@@ -1,12 +1,18 @@
 package OrderlyAPI.Expo2025.Services.Reserva;
 
+import OrderlyAPI.Expo2025.Entities.EstadoReserva.EstadoReservaEntity;
+import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
 import OrderlyAPI.Expo2025.Entities.Reserva.ReservaEntity;
 import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
+import OrderlyAPI.Expo2025.Entities.TipoReserva.TipoReservaEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.ReservaDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Reserva.ReservaRepository;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +33,9 @@ public class ReservaService {
 
     @Autowired
     private ReservaRepository repo;
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     public Page<ReservaDTO> getAllReservas(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
@@ -53,13 +62,13 @@ public class ReservaService {
 
         reservaExistente.setNomCliente(reserva.getNomCliente());
         reservaExistente.setTelefono(reserva.getTelefono());
-        reservaExistente.setIdMesa(reserva.getIdMesa());
+        reservaExistente.setMesa(reservaExistente.getMesa());
         reservaExistente.setFReserva(reserva.getFReserva());
         reservaExistente.setHoraI(reserva.getHoraI());
         reservaExistente.setHoraF(reserva.getHoraF());
         reservaExistente.setCantidadPersonas(reserva.getCantidadPersonas());
-        reservaExistente.setIdTipoReserva(reserva.getIdTipoReserva());
-        reservaExistente.setIdEstadoReserva(reserva.getIdEstadoReserva());
+        reservaExistente.setTipreser(reservaExistente.getTipreser());
+        reservaExistente.setEstreser(reservaExistente.getEstreser());
 
         ReservaEntity reservaActualizado = repo.save(reservaExistente);
         return convertirAReservasDTO(reservaActualizado);
@@ -86,13 +95,13 @@ public class ReservaService {
         dto.setId(reserva.getId());
         dto.setNomCliente(reserva.getNomCliente());
         dto.setTelefono(reserva.getTelefono());
-        dto.setIdMesa(reserva.getIdMesa());
+        dto.setMesa(entityManager.getReference(MesaEntity.class, reserva.getIdMesa()));
         dto.setFReserva(reserva.getFReserva());
         dto.setHoraI(reserva.getHoraI());
         dto.setHoraF(reserva.getHoraF());
         dto.setCantidadPersonas(reserva.getCantidadPersonas());
-        dto.setIdTipoReserva(reserva.getIdTipoReserva());
-        dto.setIdEstadoReserva(reserva.getIdEstadoReserva());
+        dto.setTipreser(entityManager.getReference(TipoReservaEntity.class, reserva.getIdTipoReserva()));
+        dto.setEstreser(entityManager.getReference(EstadoReservaEntity.class, reserva.getIdEstadoReserva()));
         return dto;
     }
 
@@ -101,13 +110,13 @@ public class ReservaService {
         dto.setId(reserva.getId());
         dto.setNomCliente(reserva.getNomCliente());
         dto.setTelefono(reserva.getTelefono());
-        dto.setIdMesa(reserva.getIdMesa());
+        dto.setIdMesa(reserva.getMesa().getId());
         dto.setFReserva(reserva.getFReserva());
         dto.setHoraI(reserva.getHoraI());
         dto.setHoraF(reserva.getHoraF());
         dto.setCantidadPersonas(reserva.getCantidadPersonas());
-        dto.setIdTipoReserva(reserva.getIdTipoReserva());
-        dto.setIdEstadoReserva(reserva.getIdEstadoReserva());
+        dto.setIdTipoReserva(reserva.getTipreser().getId());
+        dto.setIdEstadoReserva(reserva.getEstreser().getId());
         return dto;
     }
 }

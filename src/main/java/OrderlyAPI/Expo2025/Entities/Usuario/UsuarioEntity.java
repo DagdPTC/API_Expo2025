@@ -1,5 +1,9 @@
 package OrderlyAPI.Expo2025.Entities.Usuario;
 
+import OrderlyAPI.Expo2025.Entities.Empleado.EmpleadoEntity;
+import OrderlyAPI.Expo2025.Entities.Persona.PersonaEntity;
+import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
@@ -9,6 +13,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.List;
 
 @Entity
 @Table(name = "USUARIO")
@@ -23,9 +29,13 @@ public class UsuarioEntity {
     @Column(name = "CONTRASEÑA", unique = true)
     private String contrasenia;
 
-    @Column(name = "ROLID")
-    private Long rolId;
-
     @Column(name = "CORREO", unique = true)
     private String correo;
+
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL)
+    private List<EmpleadoEntity> usuario;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ROLID", referencedColumnName = "ROLID")
+    private RolEntity rol;
 }

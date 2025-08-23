@@ -1,9 +1,12 @@
 package OrderlyAPI.Expo2025.Services.Factura;
 
 import OrderlyAPI.Expo2025.Entities.Factura.FacturaEntity;
+import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.FacturaDTO;
 import OrderlyAPI.Expo2025.Repositories.Factura.FacturaRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +27,9 @@ public class FacturaService {
 
     @Autowired
     private FacturaRepository repo;
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     public Page<FacturaDTO> getAllFacturas(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
@@ -48,7 +54,7 @@ public class FacturaService {
     public FacturaDTO updateFactura(Long id, @Valid FacturaDTO factura){
         FacturaEntity facturaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Historial pedidos no encontrado"));
 
-        facturaExistente.setIdPedido(factura.getIdPedido());
+        facturaExistente.setPedido(facturaExistente.getPedido());
         facturaExistente.setDescuento(factura.getDescuento());
         facturaExistente.setTotal(factura.getTotal());
 
@@ -75,7 +81,7 @@ public class FacturaService {
     public FacturaEntity convertirAFacturaEntity(FacturaDTO factura){
         FacturaEntity entity = new FacturaEntity();
         entity.setId(factura.getId());
-        entity.setIdPedido(factura.getIdPedido());
+        entity.setPedido(entityManager.getReference(PedidoEntity.class, factura.getIdPedido()));
         entity.setDescuento(factura.getDescuento());
         entity.setTotal(factura.getTotal());
         return entity;
@@ -84,7 +90,7 @@ public class FacturaService {
     public FacturaDTO convertirAFacturaDTO(FacturaEntity factura){
         FacturaDTO dto = new FacturaDTO();
         dto.setId(factura.getId());
-        dto.setIdPedido(factura.getIdPedido());
+        dto.setIdPedido(factura.getPedido().getId());
         dto.setDescuento(factura.getDescuento());
         dto.setTotal(factura.getTotal());
         return dto;

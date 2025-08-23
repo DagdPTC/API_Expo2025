@@ -58,7 +58,7 @@ public class DocumentoIdentidadService {
     public DocumentoIdentidadDTO updateDocumentoIdentidad(Long id, @Valid DocumentoIdentidadDTO documentoIdentidad){
         DocumentoIdentidadEntity documentoIdentidadExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Documento Identidad no encontrado"));
 
-        documentoIdentidadExistente.setIdtipoDoc(documentoIdentidad.getIdtipoDoc());
+        documentoIdentidadExistente.setTipodocumento(documentoIdentidadExistente.getTipodocumento());
         documentoIdentidadExistente.setNumDoc(documentoIdentidad.getNumDoc());
 
         DocumentoIdentidadEntity documentoIdentidadActualizado = repo.save(documentoIdentidadExistente);
@@ -84,7 +84,7 @@ public class DocumentoIdentidadService {
     public DocumentoIdentidadEntity convertirADocumentosIdentidadesEntity(DocumentoIdentidadDTO documentoIdentidad){
         DocumentoIdentidadEntity dto = new DocumentoIdentidadEntity();
         dto.setId(documentoIdentidad.getId());
-        dto.setIdtipoDoc(entityManager.getReference(TipoDocumentoEntity.class, documentoIdentidad.getIdtipoDoc()));
+        dto.setTipodocumento(entityManager.getReference(TipoDocumentoEntity.class, documentoIdentidad.getIdtipoDoc()));
         dto.setNumDoc(documentoIdentidad.getNumDoc());
         return dto;
     }
@@ -92,7 +92,7 @@ public class DocumentoIdentidadService {
     public DocumentoIdentidadDTO convertirADocumentosIdentidadesDTO(DocumentoIdentidadEntity documentoIdentidad){
         DocumentoIdentidadDTO dto = new DocumentoIdentidadDTO();
         dto.setId(documentoIdentidad.getId());
-        dto.setIdtipoDoc(documentoIdentidad.getIdtipoDoc());
+        dto.setIdtipoDoc(documentoIdentidad.getTipodocumento().getIdTipoDoc());
         dto.setNumDoc(documentoIdentidad.getNumDoc());
         return dto;
     }

@@ -1,5 +1,9 @@
 package OrderlyAPI.Expo2025.Entities.Reserva;
 
+import OrderlyAPI.Expo2025.Entities.EstadoReserva.EstadoReservaEntity;
+import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
+import OrderlyAPI.Expo2025.Entities.TipoReserva.TipoReservaEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -31,9 +35,6 @@ public class ReservaEntity {
     @Column(name = "TELEFONO")
     private String Telefono;
 
-    @Column(name = "IDMESA")
-    private Long IdMesa;
-
     @Column(name = "FECHARESERVA")
     private LocalDateTime FReserva;
 
@@ -46,9 +47,15 @@ public class ReservaEntity {
     @Column(name = "CANTIDADPERSONAS")
     private Long CantidadPersonas;
 
-    @Column(name = "IDTIPORESERVA")
-    private Long idTipoReserva;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDMESA", referencedColumnName = "IDMESA")
+    private MesaEntity mesa;
 
-    @Column(name = "IDESTADORESERVA")
-    private Long IdEstadoReserva;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDTIPORESERVA", referencedColumnName = "IDTIPORESERVA")
+    private TipoReservaEntity tipreser;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDESTADORESERVA", referencedColumnName = "IDESTADORESERVA")
+    private EstadoReservaEntity estreser;
 }

@@ -1,12 +1,16 @@
 package OrderlyAPI.Expo2025.Services.Persona;
 
+import OrderlyAPI.Expo2025.Entities.DocumentoIdentidad.DocumentoIdentidadEntity;
 import OrderlyAPI.Expo2025.Entities.Persona.PersonaEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import OrderlyAPI.Expo2025.Entities.Usuario.UsuarioEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.PersonaDTO;
 import OrderlyAPI.Expo2025.Models.DTO.UsuarioDTO;
 import OrderlyAPI.Expo2025.Repositories.Persona.PersonaRepository;
 import OrderlyAPI.Expo2025.Repositories.Usuario.UsuarioRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +31,9 @@ public class PersonaService {
 
     @Autowired
     private PersonaRepository repo;
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     public Page<PersonaDTO> getAllPersonas(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
@@ -57,7 +64,7 @@ public class PersonaService {
         personaExistente.setApellidoM(persona.getApellidoM());
         personaExistente.setFechaN(persona.getFechaN());
         personaExistente.setDireccion(persona.getDireccion());
-        personaExistente.setIdDoc(persona.getIdDoc());
+        personaExistente.setDocumento(personaExistente.getDocumento());
 
         PersonaEntity personaActualizado = repo.save(personaExistente);
         return convertirAPersonasDTO(personaActualizado);
@@ -87,7 +94,7 @@ public class PersonaService {
         dto.setApellidoP(persona.getApellidoP());
         dto.setFechaN(persona.getFechaN());
         dto.setDireccion(persona.getDireccion());
-        dto.setIdDoc(persona.getIdDoc());
+        dto.setDocumento(entityManager.getReference(DocumentoIdentidadEntity.class, persona.getIdDoc()));
         return dto;
     }
 
@@ -100,7 +107,7 @@ public class PersonaService {
         dto.setApellidoP(persona.getApellidoP());
         dto.setFechaN(persona.getFechaN());
         dto.setDireccion(persona.getDireccion());
-        dto.setIdDoc(persona.getIdDoc());
+        dto.setIdDoc(persona.getDocumento().getId());
         return dto;
     }
 }

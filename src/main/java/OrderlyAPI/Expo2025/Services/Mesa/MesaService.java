@@ -1,12 +1,17 @@
 package OrderlyAPI.Expo2025.Services.Mesa;
 
+import OrderlyAPI.Expo2025.Entities.EstadoMesa.EstadoMesaEntity;
 import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
 import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
+import OrderlyAPI.Expo2025.Entities.TipoMesa.TipoMesaEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.MesaDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Mesa.MesaRepository;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +32,9 @@ public class MesaService {
 
     @Autowired
     private MesaRepository repo;
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     public Page<MesaDTO> getAllMesas(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
@@ -52,8 +60,8 @@ public class MesaService {
         MesaEntity mesaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Mesa no encontrado"));
 
         mesaExistente.setNomMesa(mesa.getNomMesa());
-        mesaExistente.setIdTipoMesa(mesa.getIdTipoMesa());
-        mesaExistente.setIdEstadoMesa(mesa.getIdEstadoMesa());
+        mesaExistente.setTipmesa(mesaExistente.getTipmesa());
+        mesaExistente.setEstmesa(mesaExistente.getEstmesa());
 
         MesaEntity mesaActualizado = repo.save(mesaExistente);
         return convertirAMesasDTO(mesaActualizado);
@@ -79,8 +87,8 @@ public class MesaService {
         MesaEntity dto = new MesaEntity();
         dto.setId(mesa.getId());
         dto.setNomMesa(mesa.getNomMesa());
-        dto.setIdTipoMesa(mesa.getIdTipoMesa());
-        dto.setIdEstadoMesa(mesa.getIdEstadoMesa());
+        dto.setEstmesa(entityManager.getReference(EstadoMesaEntity.class, mesa.getIdEstadoMesa()));
+        dto.setTipmesa(entityManager.getReference(TipoMesaEntity.class, mesa.getIdTipoMesa()));
         return dto;
     }
 
@@ -88,8 +96,8 @@ public class MesaService {
         MesaDTO dto = new MesaDTO();
         dto.setId(mesa.getId());
         dto.setNomMesa(mesa.getNomMesa());
-        dto.setIdTipoMesa(mesa.getIdTipoMesa());
-        dto.setIdEstadoMesa(mesa.getIdEstadoMesa());
+        dto.setIdTipoMesa(mesa.getTipmesa().getId());
+        dto.setIdEstadoMesa(mesa.getEstmesa().getId());
         return dto;
     }
 }

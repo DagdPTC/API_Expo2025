@@ -1,5 +1,7 @@
 package OrderlyAPI.Expo2025.Entities.EstadoReserva;
 
+import OrderlyAPI.Expo2025.Entities.Persona.PersonaEntity;
+import OrderlyAPI.Expo2025.Entities.Reserva.ReservaEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -8,6 +10,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.List;
 
 @Entity
 @Table(name = "ESTADORESERVA")
@@ -21,4 +25,7 @@ public class EstadoReservaEntity {
 
     @Column(name = "NOMBREESTADO", unique = true)
     private String NomEstado;
+
+    @OneToMany(mappedBy = "estreser", cascade = CascadeType.ALL)
+    private List<ReservaEntity> estreser;
 }

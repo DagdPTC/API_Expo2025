@@ -1,12 +1,19 @@
 package OrderlyAPI.Expo2025.Services.Pedido;
 
+import OrderlyAPI.Expo2025.Entities.Empleado.EmpleadoEntity;
+import OrderlyAPI.Expo2025.Entities.EstadoPedido.EstadoPedidoEntity;
+import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
 import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
+import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
 import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.PedidoDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Pedido.PedidoRepository;
 import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +34,9 @@ public class PedidoService {
 
     @Autowired
     private PedidoRepository repo;
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     public Page<PedidoDTO> getAllPedidos(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
@@ -52,16 +62,16 @@ public class PedidoService {
         PedidoEntity pedidoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Pedido no encontrado"));
 
         pedidoExistente.setNombrecliente(pedido.getNombrecliente());
-        pedidoExistente.setIdMesa(pedido.getIdMesa());
-        pedidoExistente.setIdEmpleado(pedido.getIdEmpleado());
+        pedidoExistente.setMesas(pedidoExistente.getMesas());
+        pedidoExistente.setEmpleado(pedidoExistente.getEmpleado());
         pedidoExistente.setFPedido(pedido.getFPedido());
-        pedidoExistente.setIdEstadoPedido(pedido.getIdEstadoPedido());
+        pedidoExistente.setEstpedido(pedidoExistente.getEstpedido());
         pedidoExistente.setObservaciones(pedido.getObservaciones());
         pedidoExistente.setCantidad(pedido.getCantidad());
         pedidoExistente.setTotalPedido(pedido.getTotalPedido());
         pedidoExistente.setSubtotal(pedido.getSubtotal());
         pedidoExistente.setPropina(pedido.getPropina());
-        pedidoExistente.setIdPlatillo(pedido.getIdPlatillo());
+        pedidoExistente.setPlatillo(pedidoExistente.getPlatillo());
 
         PedidoEntity pedidoActualizado = repo.save(pedidoExistente);
         return convertirAPedidosDTO(pedidoActualizado);
@@ -87,17 +97,17 @@ public class PedidoService {
         PedidoEntity dto = new PedidoEntity();
         dto.setId(pedido.getId());
         dto.setNombrecliente(pedido.getNombrecliente());
-        dto.setIdMesa(pedido.getIdMesa());
-        dto.setIdEmpleado(pedido.getIdEmpleado());
+        dto.setMesas(entityManager.getReference(MesaEntity.class, pedido.getIdMesa()));
+        dto.setEmpleado(entityManager.getReference(EmpleadoEntity.class, pedido.getIdEmpleado()));
         dto.setFPedido(pedido.getFPedido());
-        dto.setIdEstadoPedido(pedido.getIdEstadoPedido());
+        dto.setEstpedido(entityManager.getReference(EstadoPedidoEntity.class, pedido.getIdEstadoPedido()));
         dto.setObservaciones(pedido.getObservaciones());
         dto.setObservaciones(pedido.getObservaciones());
         dto.setCantidad(pedido.getCantidad());
         dto.setTotalPedido(pedido.getTotalPedido());
         dto.setSubtotal(pedido.getSubtotal());
         dto.setPropina(pedido.getPropina());
-        dto.setIdPlatillo(pedido.getIdPlatillo());
+        dto.setPlatillo(entityManager.getReference(PlatilloEntity.class, pedido.getIdPlatillo()));
         return dto;
     }
 
@@ -105,17 +115,17 @@ public class PedidoService {
         PedidoDTO dto = new PedidoDTO();
         dto.setId(pedido.getId());
         dto.setNombrecliente(pedido.getNombrecliente());
-        dto.setIdMesa(pedido.getIdMesa());
-        dto.setIdEmpleado(pedido.getIdEmpleado());
+        dto.setIdMesa(pedido.getMesas().getId());
+        dto.setIdEmpleado(pedido.getEmpleado().getId());
         dto.setFPedido(pedido.getFPedido());
-        dto.setIdEstadoPedido(pedido.getIdEstadoPedido());
+        dto.setIdEstadoPedido(pedido.getEstpedido().getId());
         dto.setObservaciones(pedido.getObservaciones());
         dto.setObservaciones(pedido.getObservaciones());
         dto.setCantidad(pedido.getCantidad());
         dto.setTotalPedido(pedido.getTotalPedido());
         dto.setSubtotal(pedido.getSubtotal());
         dto.setPropina(pedido.getPropina());
-        dto.setIdPlatillo(pedido.getIdPlatillo());
+        dto.setIdPlatillo(pedido.getPlatillo().getId());
         return dto;
     }
 }

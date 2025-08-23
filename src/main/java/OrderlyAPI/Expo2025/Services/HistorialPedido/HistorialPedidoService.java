@@ -1,11 +1,16 @@
 package OrderlyAPI.Expo2025.Services.HistorialPedido;
 
+import OrderlyAPI.Expo2025.Entities.Factura.FacturaEntity;
 import OrderlyAPI.Expo2025.Entities.HistorialPedido.HistorialPedidoEntity;
+import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
 import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.HistorialPedidoDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.HistorialPedido.HistorialPedidoRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +31,9 @@ public class HistorialPedidoService {
 
     @Autowired
     private HistorialPedidoRepository repo;
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     public Page<HistorialPedidoDTO> getAllhistorialpedido(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
@@ -50,8 +58,8 @@ public class HistorialPedidoService {
     public HistorialPedidoDTO updateHistorialpedido(Long id, @Valid HistorialPedidoDTO historialpedido){
         HistorialPedidoEntity historialpedidoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Historial pedido no encontrado"));
 
-        historialpedidoExistente.setIdPedido(historialpedido.getIdPedido());
-        historialpedidoExistente.setIdFactura(historialpedido.getIdFactura());
+        historialpedidoExistente.setPedidos(historialpedidoExistente.getPedidos());
+        historialpedidoExistente.setFactura(historialpedidoExistente.getFactura());
 
         HistorialPedidoEntity historialpedidoActualizado = repo.save(historialpedidoExistente);
         return convertirAHistorialPedidoDTO(historialpedidoActualizado);
@@ -76,16 +84,16 @@ public class HistorialPedidoService {
     public HistorialPedidoEntity convertirAHistorialPedidoEntity(HistorialPedidoDTO dto){
         HistorialPedidoEntity entity = new HistorialPedidoEntity();
         entity.setId(dto.getId());
-        entity.setIdPedido(dto.getIdPedido());
-        entity.setIdFactura(dto.getIdFactura());
+        entity.setPedidos(entityManager.getReference(PedidoEntity.class, dto.getIdPedido()));
+        entity.setFactura(entityManager.getReference(FacturaEntity.class, dto.getIdFactura()));
         return entity;
     }
 
     public HistorialPedidoDTO convertirAHistorialPedidoDTO(HistorialPedidoEntity historialpedido){
         HistorialPedidoDTO dto = new HistorialPedidoDTO();
         dto.setId(historialpedido.getId());
-        dto.setIdPedido(historialpedido.getIdPedido());
-        dto.setIdFactura(historialpedido.getIdFactura());
+        dto.setIdPedido(historialpedido.getPedidos().getId());
+        dto.setIdFactura(historialpedido.getFactura().getId());
         return dto;
     }
 }

@@ -1,6 +1,7 @@
 package OrderlyAPI.Expo2025.Entities.Platillo;
 
 import OrderlyAPI.Expo2025.Entities.Categoria.CategoriaEntity;
+import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -10,6 +11,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.List;
 
 @Entity
 @Table(name = "PLATILLO")
@@ -29,6 +32,9 @@ public class PlatilloEntity {
 
     @Column(name = "PRECIO")
     private double Precio;
+
+    @OneToMany(mappedBy = "platillo", cascade = CascadeType.ALL)
+    private List<PedidoEntity> platillo;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IDCATEGORIA", referencedColumnName = "IDCATEGORIA")

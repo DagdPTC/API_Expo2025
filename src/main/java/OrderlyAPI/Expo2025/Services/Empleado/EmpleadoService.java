@@ -1,11 +1,16 @@
 package OrderlyAPI.Expo2025.Services.Empleado;
 
 import OrderlyAPI.Expo2025.Entities.Empleado.EmpleadoEntity;
+import OrderlyAPI.Expo2025.Entities.Persona.PersonaEntity;
 import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
+import OrderlyAPI.Expo2025.Entities.Usuario.UsuarioEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.EmpleadoDTO;
 import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Empleado.EmpleadoRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +31,9 @@ public class EmpleadoService {
 
     @Autowired
     private EmpleadoRepository repo;
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     public Page<EmpleadoDTO> getAllEmpleados(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
@@ -50,8 +58,8 @@ public class EmpleadoService {
     public EmpleadoDTO updateEmpleado(Long id, @Valid EmpleadoDTO empleado){
         EmpleadoEntity empleadoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Empleado no encontrado"));
 
-        empleadoExistente.setIdPersona(empleado.getIdPersona());
-        empleadoExistente.setIdUsuario(empleado.getIdUsuario());
+        empleadoExistente.setPersona(empleadoExistente.getPersona());
+        empleadoExistente.setUsuario(empleadoExistente.getUsuario());
         empleadoExistente.setFContratacion(empleado.getFContratacion());
 
         EmpleadoEntity empleadoActualizado = repo.save(empleadoExistente);
@@ -77,8 +85,8 @@ public class EmpleadoService {
     public EmpleadoEntity convertirAEmpleadosEntity(EmpleadoDTO empleado){
         EmpleadoEntity dto = new EmpleadoEntity();
         dto.setId(empleado.getId());
-        dto.setIdPersona(empleado.getIdPersona());
-        dto.setIdUsuario(empleado.getIdUsuario());
+        dto.setPersona(entityManager.getReference(PersonaEntity.class, empleado.getIdPersona()));
+        dto.setUsuario(entityManager.getReference(UsuarioEntity.class, empleado.getIdUsuario()));
         dto.setFContratacion(empleado.getFContratacion());
         return dto;
     }
@@ -86,8 +94,8 @@ public class EmpleadoService {
     public EmpleadoDTO convertirAEmpleadosDTO(EmpleadoEntity empleado){
         EmpleadoDTO dto = new EmpleadoDTO();
         dto.setId(empleado.getId());
-        dto.setIdPersona(empleado.getIdPersona());
-        dto.setIdUsuario(empleado.getIdUsuario());
+        dto.setIdPersona(empleado.getPersona().getId());
+        dto.setIdUsuario(empleado.getUsuario().getId());
         dto.setFContratacion(empleado.getFContratacion());
         return dto;
     }

@@ -1,5 +1,7 @@
 package OrderlyAPI.Expo2025.Entities.EstadoMesa;
 
+import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
+import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -8,6 +10,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.List;
 
 @Entity
 @Table(name = "ESTADOMESA")
@@ -24,4 +28,7 @@ public class EstadoMesaEntity {
 
     @Column(name = "COLORESTADOMESA", unique = true)
     private String ColorEstadoMesa;
+
+    @OneToMany(mappedBy = "estmesa", cascade = CascadeType.ALL)
+    private List<MesaEntity> estmesa;
 }
