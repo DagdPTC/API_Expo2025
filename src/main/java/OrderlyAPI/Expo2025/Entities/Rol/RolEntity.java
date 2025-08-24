@@ -23,6 +23,6 @@ public class RolEntity {
     @Column(name = "ROL", unique = true)
     private String rol;
 
-    @OneToMany(mappedBy = "ROL", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "rol", cascade = CascadeType.ALL)
     private List<UsuarioEntity> urol;
 }

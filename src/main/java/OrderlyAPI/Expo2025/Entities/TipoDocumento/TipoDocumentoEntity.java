@@ -1,5 +1,6 @@
 package OrderlyAPI.Expo2025.Entities.TipoDocumento;
 
+import OrderlyAPI.Expo2025.Entities.DocumentoIdentidad.DocumentoIdentidadEntity;
 import OrderlyAPI.Expo2025.Entities.Persona.PersonaEntity;
 import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
 import jakarta.persistence.*;
@@ -24,6 +25,6 @@ public class TipoDocumentoEntity {
     @Column(name = "TIPODOCUMENTO", unique = true)
     private String TipoDoc;
 
-    @OneToMany(mappedBy = "documento", cascade = CascadeType.ALL)
-    private List<PersonaEntity> documento;
+    @OneToMany(mappedBy = "tipodocumento", cascade = CascadeType.ALL)
+    private List<DocumentoIdentidadEntity> documento;
 }

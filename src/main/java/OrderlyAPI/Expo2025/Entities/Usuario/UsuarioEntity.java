@@ -37,5 +37,5 @@ public class UsuarioEntity {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ROLID", referencedColumnName = "ROLID")
-    private RolEntity urol;
+    private RolEntity rol;
 }
