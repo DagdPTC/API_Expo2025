@@ -57,7 +57,7 @@ public class UsuarioService {
         UsuarioEntity usuarioExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Usuario no encontrado"));
 
         usuarioExistente.setContrasenia(usuario.getContrasenia());
-        usuarioExistente.setRol(usuarioExistente.getRol());
+        usuarioExistente.setUrol(usuarioExistente.getUrol());
         usuarioExistente.setCorreo(usuario.getCorreo());
 
         UsuarioEntity usuarioActualizado = repo.save(usuarioExistente);
@@ -83,7 +83,7 @@ public class UsuarioService {
         UsuarioDTO dto = new UsuarioDTO();
         dto.setId(usuario.getId());
         dto.setContrasenia(usuario.getContrasenia());
-        dto.setRolId(usuario.getRol().getId());
+        dto.setRolId(usuario.getUrol().getId());
         dto.setCorreo(usuario.getCorreo());
         return dto;
     }
@@ -92,7 +92,7 @@ public class UsuarioService {
         UsuarioEntity dto = new UsuarioEntity();
         dto.setId(usuario.getId());
         dto.setContrasenia(usuario.getContrasenia());
-        dto.setRol(entityManager.getReference(RolEntity.class, usuario.getRolId()));
+        dto.setUrol(entityManager.getReference(RolEntity.class, usuario.getRolId()));
         dto.setCorreo(usuario.getCorreo());
         return dto;
     }

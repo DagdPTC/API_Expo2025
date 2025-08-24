@@ -20,6 +20,7 @@ public class TipoDocumentoEntity {
     @SequenceGenerator(name = "tipo_Document_seq", sequenceName = "tipo_Document_seq", allocationSize = 1)
     @Column(name = "IDTIPODOCUMENTO")
     private Long IdTipoDoc;
+
     @Column(name = "TIPODOCUMENTO", unique = true)
     private String TipoDoc;
 

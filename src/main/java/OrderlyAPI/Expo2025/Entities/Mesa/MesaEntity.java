@@ -32,7 +32,7 @@ public class MesaEntity {
     @OneToMany(mappedBy = "mesa", cascade = CascadeType.ALL)
     private List<ReservaEntity> mesa;
 
-    @OneToMany(mappedBy = "mesa", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "mesas", cascade = CascadeType.ALL)
     private List<PedidoEntity> mesas;
 
     @ManyToOne(fetch = FetchType.EAGER)
