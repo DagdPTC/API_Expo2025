@@ -26,7 +26,7 @@ public class UsuarioEntity {
     @Column(name = "USUARIOID")
     private Long Id;
 
-    @Column(name = "CONTRASEÑA", unique = true)
+    @Column(name = "CONTRASENA", unique = true)
     private String contrasenia;
 
     @Column(name = "CORREO", unique = true)
