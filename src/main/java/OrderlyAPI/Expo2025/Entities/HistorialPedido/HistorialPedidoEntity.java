@@ -19,7 +19,6 @@ public class HistorialPedidoEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "historial_Pedido_seq")
     @SequenceGenerator(name = "historial_Pedido_seq", sequenceName = "historial_Pedido_seq", allocationSize = 1)
     @Column(name = "IDHISTORIALPEDIDO")
-    @NotBlank(message = "El campo no puede ser nulo")
     private Long Id;
 
     @ManyToOne(fetch = FetchType.EAGER)
