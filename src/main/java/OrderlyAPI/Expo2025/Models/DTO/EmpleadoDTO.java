@@ -17,6 +17,5 @@ public class EmpleadoDTO {
 
     private Long IdUsuario;
 
-    @NotBlank(message = "La fecha contratacion no puede ser nula")
     private LocalDateTime FContratacion;
 }
