@@ -100,6 +100,23 @@ public class MesaController {
         }
     }
 
+    @PatchMapping("/estado/{id}/{estadoId}")
+    public ResponseEntity<?> actualizarSoloEstado(@PathVariable Long id, @PathVariable Long estadoId) {
+        try {
+            MesaDTO actualizado = service.actualizarEstado(id, estadoId);
+            return ResponseEntity.ok(actualizado); // 200 con el DTO actualizado
+        } catch (ExceptionDatoNoEncontrado e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "status", "Error",
+                    "message", "Error al actualizar el estado de la mesa",
+                    "detail", e.getMessage()
+            ));
+        }
+    }
+
+
     @DeleteMapping("/eliminarMesa/{id}")
     public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id){
         try{

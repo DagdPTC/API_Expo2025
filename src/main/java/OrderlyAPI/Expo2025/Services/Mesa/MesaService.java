@@ -68,6 +68,21 @@ public class MesaService {
         return convertirAMesasDTO(actualizado);
     }
 
+    @Transactional
+    public MesaDTO actualizarEstado(Long id, Long estadoId) {
+        MesaEntity mesa = repo.findById(id)
+                .orElseThrow(() -> new ExceptionDatoNoEncontrado("Mesa no encontrada"));
+
+        // Solo actualiza el estado
+        mesa.setEstmesa(entityManager.getReference(EstadoMesaEntity.class, estadoId));
+
+        MesaEntity actualizado = repo.save(mesa);
+        entityManager.flush();
+
+        return convertirAMesasDTO(actualizado);
+    }
+
+
     public boolean deleteMesa(Long id){
         MesaEntity objMesa = repo.findById(id).orElse(null);
         if (objMesa != null){
