@@ -46,7 +46,7 @@ public class TipoMesaController {
         }
         return ResponseEntity.ok(datos);
     }
-    @PostMapping("/createTipoMesa")
+        @PostMapping("/createTipoMesa")
     public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody TipoMesaDTO tipoMesa){
         try{
             TipoMesaDTO respuesta = service.createTipomesa(tipoMesa);
