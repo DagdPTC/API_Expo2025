@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Getter @Setter
@@ -30,8 +31,7 @@ public class PersonaDTO {
     @Size(max = 20, message = "El apellido materno debe tener mas de 20 caracteres")
     private String apellidoM;
 
-    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "Formato de fecha invalido, ejemplo: YYYY-MM-DD")
-    private String fechaN;
+    private LocalDate fechaN;
 
     @NotBlank(message = "La direccion no puede ser nula")
     @Size(max = 200, message = "La direccion no debe tener mas de 200 caracteres")

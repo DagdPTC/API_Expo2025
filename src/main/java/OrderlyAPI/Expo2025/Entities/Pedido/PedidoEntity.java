@@ -16,6 +16,7 @@ import lombok.ToString;
 
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -34,7 +35,7 @@ public class PedidoEntity {
     private String Nombrecliente;
 
     @Column(name = "FECHAPEDIDO")
-    private LocalDateTime FPedido;
+    private LocalDate FPedido;
 
     @Column(name = "OBSERVACIONES")
     private String Observaciones;

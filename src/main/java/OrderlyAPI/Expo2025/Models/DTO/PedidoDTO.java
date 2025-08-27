@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -22,8 +23,7 @@ public class PedidoDTO {
 
     private Long IdEmpleado;
 
-    @NotBlank(message = "La fecha pedido no puede ser nulo")
-    private LocalDateTime FPedido;
+    private LocalDate FPedido;
 
     private Long IdEstadoPedido;
 

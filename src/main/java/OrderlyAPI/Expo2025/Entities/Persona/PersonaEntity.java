@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -38,7 +39,7 @@ public class PersonaEntity {
     private String apellidoM;
 
     @Column(name = "FECHANACIMIENTO")
-    private String fechaN;
+    private LocalDate fechaN;
 
     @Column(name = "DIRECCION")
     private String Direccion;
