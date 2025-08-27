@@ -2,28 +2,20 @@ package OrderlyAPI.Expo2025.Services.Mesa;
 
 import OrderlyAPI.Expo2025.Entities.EstadoMesa.EstadoMesaEntity;
 import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
-import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
-import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import OrderlyAPI.Expo2025.Entities.TipoMesa.TipoMesaEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.MesaDTO;
-import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.Mesa.MesaRepository;
-import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.validation.Valid;
+import jakarta.transaction.Transactional; // <-- importante
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -42,62 +34,69 @@ public class MesaService {
         return mesas.map(this::convertirAMesasDTO);
     }
 
-    public MesaDTO createMesa(@Valid MesaDTO mesaDTO){
-        if (mesaDTO == null || mesaDTO.getNomMesa() == null || mesaDTO.getNomMesa().describeConstable().isEmpty()){
-            throw new IllegalArgumentException("La mesa no puede ser nulo");
+    public MesaDTO createMesa(MesaDTO mesaDTO){
+        if (mesaDTO == null || mesaDTO.getNomMesa() == null || mesaDTO.getNomMesa().trim().isEmpty()){
+            throw new IllegalArgumentException("La mesa no puede ser nula y debe tener nombre.");
         }
-        try{
-            MesaEntity mesaEntity = convertirAMesasEntity(mesaDTO);
-            MesaEntity mesaGuardado = repo.save(mesaEntity);
-            return convertirAMesasDTO(mesaGuardado);
-        }catch (Exception e){
-            log.error("Error al registrar mesa: " + e.getMessage());
-            throw new ExceptionDatoNoEncontrado("Error al registrar la mesa" + e.getMessage());
-        }
+        MesaEntity mesaEntity = convertirAMesasEntity(mesaDTO);
+        MesaEntity mesaGuardado = repo.save(mesaEntity);
+        return convertirAMesasDTO(mesaGuardado);
     }
 
-    public MesaDTO updateMesa(Long id, @Valid MesaDTO mesa){
-        MesaEntity mesaExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Mesa no encontrado"));
+    @Transactional
+    public MesaDTO updateMesa(Long id, MesaDTO mesaDTO){
+        MesaEntity mesa = repo.findById(id)
+                .orElseThrow(() -> new ExceptionDatoNoEncontrado("Mesa no encontrada"));
 
-        mesaExistente.setNomMesa(mesa.getNomMesa());
-        mesaExistente.setTipmesa(mesaExistente.getTipmesa());
-        mesaExistente.setEstmesa(mesaExistente.getEstmesa());
+        // Actualiza únicamente lo que venga en el DTO
+        if (mesaDTO.getNomMesa() != null && !mesaDTO.getNomMesa().trim().isEmpty()){
+            mesa.setNomMesa(mesaDTO.getNomMesa().trim());
+        }
 
-        MesaEntity mesaActualizado = repo.save(mesaExistente);
-        return convertirAMesasDTO(mesaActualizado);
+        if (mesaDTO.getIdTipoMesa() != null){
+            mesa.setTipmesa(entityManager.getReference(TipoMesaEntity.class, mesaDTO.getIdTipoMesa()));
+        }
+
+        if (mesaDTO.getIdEstadoMesa() != null){
+            mesa.setEstmesa(entityManager.getReference(EstadoMesaEntity.class, mesaDTO.getIdEstadoMesa()));
+        }
+
+        // save() + flush() para forzar escritura inmediata en la DB
+        MesaEntity actualizado = repo.save(mesa);
+        entityManager.flush();
+
+        return convertirAMesasDTO(actualizado);
     }
 
     public boolean deleteMesa(Long id){
-        try{
-            MesaEntity objMesa = repo.findById(id).orElse(null);
-            if (objMesa != null){
-                repo.deleteById(id);
-                return true;
-            }else{
-                System.out.println("Mesa no encontrado");
-                return false;
-            }
-        }catch (EmptyResultDataAccessException e){
-            throw new EmptyResultDataAccessException("No se encontro mesa con ID:" + id + " para eliminar.", 1);
+        MesaEntity objMesa = repo.findById(id).orElse(null);
+        if (objMesa != null){
+            repo.deleteById(id);
+            return true;
+        } else {
+            return false;
         }
     }
 
-
     public MesaEntity convertirAMesasEntity(MesaDTO mesa){
-        MesaEntity dto = new MesaEntity();
-        dto.setId(mesa.getId());
-        dto.setNomMesa(mesa.getNomMesa());
-        dto.setEstmesa(entityManager.getReference(EstadoMesaEntity.class, mesa.getIdEstadoMesa()));
-        dto.setTipmesa(entityManager.getReference(TipoMesaEntity.class, mesa.getIdTipoMesa()));
-        return dto;
+        MesaEntity e = new MesaEntity();
+        e.setId(mesa.getId());
+        e.setNomMesa(mesa.getNomMesa());
+        if (mesa.getIdEstadoMesa() != null){
+            e.setEstmesa(entityManager.getReference(EstadoMesaEntity.class, mesa.getIdEstadoMesa()));
+        }
+        if (mesa.getIdTipoMesa() != null){
+            e.setTipmesa(entityManager.getReference(TipoMesaEntity.class, mesa.getIdTipoMesa()));
+        }
+        return e;
     }
 
     public MesaDTO convertirAMesasDTO(MesaEntity mesa){
         MesaDTO dto = new MesaDTO();
         dto.setId(mesa.getId());
         dto.setNomMesa(mesa.getNomMesa());
-        dto.setIdTipoMesa(mesa.getTipmesa().getId());
-        dto.setIdEstadoMesa(mesa.getEstmesa().getId());
+        if (mesa.getTipmesa() != null) dto.setIdTipoMesa(mesa.getTipmesa().getId());
+        if (mesa.getEstmesa() != null) dto.setIdEstadoMesa(mesa.getEstmesa().getId());
         return dto;
     }
 }
