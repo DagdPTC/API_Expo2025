@@ -25,6 +25,4 @@ public class PlatilloDTO {
     private double Precio;
 
     private Long IdCate;
-
-    private String NombrerCate;
 }

@@ -1,10 +1,12 @@
 package OrderlyAPI.Expo2025.Models.DTO;
 
+import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Date;
@@ -24,17 +26,14 @@ public class ReservaDTO {
 
     private Long IdMesa;
 
-    @NotBlank(message = "La fecha reserva no puede ser nula")
-    private LocalDateTime FReserva;
+    private LocalDate FReserva;
 
-    @NotBlank(message = "La hora inicio no puede ser nula")
     private LocalTime HoraI;
 
-    @NotBlank(message = "La hora fin no puede ser nula")
     private LocalTime HoraF;
 
-    @NotBlank(message = "La capacidad de personas no puede ser nula")
     @Min(value = 1, message = "Debe haber al menos una persona")
+    @Max(value = 20, message = "No puede haber mas de 20 personas")
     private Long CantidadPersonas;
 
     private Long idTipoReserva;

@@ -15,6 +15,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Date;
@@ -36,7 +37,7 @@ public class ReservaEntity {
     private String Telefono;
 
     @Column(name = "FECHARESERVA")
-    private LocalDateTime FReserva;
+    private LocalDate FReserva;
 
     @Column(name = "HORAINICIO")
     private LocalTime HoraI;
