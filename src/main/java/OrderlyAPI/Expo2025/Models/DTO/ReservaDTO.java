@@ -1,6 +1,8 @@
 package OrderlyAPI.Expo2025.Models.DTO;
 
 import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,11 +28,15 @@ public class ReservaDTO {
 
     private Long IdMesa;
 
-    private LocalDate FReserva;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate fReserva;
 
-    private LocalTime HoraI;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
+    private LocalTime horaI;
 
-    private LocalTime HoraF;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
+    private LocalTime horaF;
+
 
     @Min(value = 1, message = "Debe haber al menos una persona")
     @Max(value = 20, message = "No puede haber mas de 20 personas")
