@@ -31,6 +31,7 @@ public class PedidoDTO {
     @Size(max = 100, message = "Las observaciones no pueden tener mas de 100 caracteres")
     private String Observaciones;
 
+    @NotNull(message = "La cantidad no puede ser nula") // ← CAMBIA @NotBlank por @NotNull
     @Min(value = 1, message = "La cantidad no puede ser cero o negativa")
     private Long Cantidad;
 

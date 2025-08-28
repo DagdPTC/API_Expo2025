@@ -48,20 +48,41 @@ public class PedidoController {
         return ResponseEntity.ok(datos);
     }
     @PostMapping("/createPedido")
-    public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody PedidoDTO pedido, HttpServletRequest request){
+    public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody PedidoDTO pedido,
+                                                     BindingResult bindingResult, // ← Agrega esto
+                                                     HttpServletRequest request){
+
+        // Verifica errores de validación
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errores = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error ->
+                    errores.put(error.getField(), error.getDefaultMessage()));
+
+            System.out.println("Errores de validación: " + errores);
+
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "VALIDATION_ERROR",
+                    "errors", errores,
+                    "message", "Datos de entrada inválidos"
+            ));
+        }
+
         try{
+            System.out.println("DTO recibido: " + pedido.toString());
             PedidoDTO respuesta = service.createPedido(pedido);
+
             if (respuesta == null){
                 return ResponseEntity.badRequest().body(Map.of(
                         "status", "Inserción incorrecta",
-                        "errorType", "VALIDATION_ERROR",
-                        "message", "Datos del usuario inválidos"
+                        "errorType", "SERVICE_ERROR",
+                        "message", "Error en el servicio"
                 ));
             }
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "status","sucess",
+                    "status","success",
                     "data",respuesta));
         }catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "status", "error",
