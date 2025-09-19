@@ -10,19 +10,11 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.orm.jpa.EntityManagerFactoryUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -41,68 +33,54 @@ public class PlatilloService {
         return platillos.map(this::convertirAPlatillosDTO);
     }
 
+    // NUEVO
+    public PlatilloDTO getPlatilloById(Long id){
+        PlatilloEntity p = repo.findById(id).orElseThrow(
+                () -> new ExceptionDatoNoEncontrado("Platillo no encontrado")
+        );
+        return convertirAPlatillosDTO(p);
+    }
+
     public PlatilloDTO createPlatillo(@Valid PlatilloDTO platilloDTO){
-        if (platilloDTO == null){
-            throw new IllegalArgumentException("El nombre del platillo no puede ser nulo");
-        }
-        try{
-            PlatilloEntity platilloEntity = convertirAPlatillosEntity(platilloDTO);
-            PlatilloEntity platilloGuardado = repo.save(platilloEntity);
-            return convertirAPlatillosDTO(platilloGuardado);
-        }catch (Exception e){
-            log.error("Error al registrar platillo: " + e.getMessage());
-            throw new ExceptionDatoNoEncontrado("Error al registrar el platillo" + e.getMessage());
-        }
+        PlatilloEntity entity = convertirAPlatillosEntity(platilloDTO);
+        PlatilloEntity saved = repo.save(entity);
+        return convertirAPlatillosDTO(saved);
     }
 
     public PlatilloDTO updatePlatillo(Long id, @Valid PlatilloDTO platillo){
-        PlatilloEntity platilloExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Platillo no encontrado"));
-
-        platilloExistente.setNomPlatillo(platillo.getNomPlatillo());
-        platilloExistente.setDescripcion(platillo.getDescripcion());
-        platilloExistente.setPrecio(platillo.getPrecio());
-        if (platillo.getIdCate() == null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"No se pudo cargar la categoria");
+        PlatilloEntity existente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Platillo no encontrado"));
+        existente.setNomPlatillo(platillo.getNomPlatillo());
+        existente.setDescripcion(platillo.getDescripcion());
+        existente.setPrecio(platillo.getPrecio());
+        if (platillo.getIdCate() != null) {
+            existente.setCategoria(entityManager.getReference(CategoriaEntity.class, platillo.getIdCate()));
         }
-        CategoriaEntity categoria = entityManager.getReference(CategoriaEntity.class,platillo.getIdCate());
-
-        PlatilloEntity platilloActualizado = repo.save(platilloExistente);
-        return convertirAPlatillosDTO(platilloActualizado);
+        PlatilloEntity actualizado = repo.save(existente);
+        return convertirAPlatillosDTO(actualizado);
     }
 
     public boolean deletePlatillo(Long id){
-        try{
-            PlatilloEntity objPlatillo = repo.findById(id).orElse(null);
-            if (objPlatillo != null){
-                repo.deleteById(id);
-                return true;
-            }else{
-                System.out.println("Usuario no encontrado");
-                return false;
-            }
-        }catch (EmptyResultDataAccessException e){
-            throw new EmptyResultDataAccessException("No se encontro platillo con ID:" + id + " para eliminar.", 1);
-        }
+        if (repo.existsById(id)) { repo.deleteById(id); return true; }
+        return false;
     }
 
-
-    public PlatilloEntity convertirAPlatillosEntity(PlatilloDTO platillo){
-        PlatilloEntity dto = new PlatilloEntity();
-        dto.setId(platillo.getId());
-        dto.setNomPlatillo(platillo.getNomPlatillo());
-        dto.setDescripcion(platillo.getDescripcion());
-        dto.setPrecio(platillo.getPrecio());
-        dto.setCategoria(entityManager.getReference(CategoriaEntity.class, platillo.getIdCate()));
-        return dto;
+    public PlatilloEntity convertirAPlatillosEntity(PlatilloDTO dto){
+        PlatilloEntity e = new PlatilloEntity();
+        e.setId(dto.getId());
+        e.setNomPlatillo(dto.getNomPlatillo());
+        e.setDescripcion(dto.getDescripcion());
+        e.setPrecio(dto.getPrecio());
+        if (dto.getIdCate()!=null) e.setCategoria(entityManager.getReference(CategoriaEntity.class, dto.getIdCate()));
+        return e;
     }
 
-    public PlatilloDTO convertirAPlatillosDTO(PlatilloEntity platillo){
+    public PlatilloDTO convertirAPlatillosDTO(PlatilloEntity e){
         PlatilloDTO dto = new PlatilloDTO();
-        dto.setId(platillo.getId());
-        dto.setNomPlatillo(platillo.getNomPlatillo());
-        dto.setDescripcion(platillo.getDescripcion());
-        dto.setPrecio(platillo.getPrecio());
-        dto.setIdCate(platillo.getCategoria().getId());
+        dto.setId(e.getId());
+        dto.setNomPlatillo(e.getNomPlatillo());
+        dto.setDescripcion(e.getDescripcion());
+        dto.setPrecio(e.getPrecio());
+        if (e.getCategoria()!=null) dto.setIdCate(e.getCategoria().getId());
         return dto;
     }
 }

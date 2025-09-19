@@ -1,5 +1,6 @@
 package OrderlyAPI.Expo2025.Models.DTO;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,7 @@ public class PedidoDTO {
 
     private Long IdEmpleado;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate FPedido;
 
     private Long IdEstadoPedido;
@@ -43,7 +45,7 @@ public class PedidoDTO {
     @DecimalMax(value = "99999999.99", message = "El subtotal debe ser menor de 99999999.99")
     private double Subtotal;
 
-    @DecimalMin(value = "0.01", message = "La propina debe ser mayor de 0.01")
+    @PositiveOrZero   // permite 0
     @DecimalMax(value = "99999999.99", message = "La propina debe ser menor de 99999999.99")
     private double Propina;
 
