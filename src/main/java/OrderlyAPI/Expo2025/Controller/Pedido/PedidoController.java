@@ -3,9 +3,7 @@ package OrderlyAPI.Expo2025.Controller.Pedido;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatosDuplicados;
 import OrderlyAPI.Expo2025.Models.DTO.PedidoDTO;
-import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Services.Pedido.PedidoService;
-import OrderlyAPI.Expo2025.Services.Rol.RolService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -47,19 +44,31 @@ public class PedidoController {
         }
         return ResponseEntity.ok(datos);
     }
+
+    // === NUEVO: obtener pedido por ID ===
+    @GetMapping("/getPedidoById/{id}")
+    public ResponseEntity<?> getPedidoById(@PathVariable Long id) {
+        try {
+            PedidoDTO dto = service.getById(id);
+            return ResponseEntity.ok(dto);
+        } catch (ExceptionDatoNoEncontrado e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("status", "Not Found", "message", "Pedido no encontrado"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("status","Error","message","Error al obtener el pedido","detail",e.getMessage()));
+        }
+    }
+
     @PostMapping("/createPedido")
     public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody PedidoDTO pedido,
-                                                     BindingResult bindingResult, // ← Agrega esto
+                                                     BindingResult bindingResult,
                                                      HttpServletRequest request){
 
-        // Verifica errores de validación
         if (bindingResult.hasErrors()) {
             Map<String, String> errores = new HashMap<>();
             bindingResult.getFieldErrors().forEach(error ->
                     errores.put(error.getField(), error.getDefaultMessage()));
-
-            System.out.println("Errores de validación: " + errores);
-
             return ResponseEntity.badRequest().body(Map.of(
                     "status", "VALIDATION_ERROR",
                     "errors", errores,
@@ -68,9 +77,7 @@ public class PedidoController {
         }
 
         try{
-            System.out.println("DTO recibido: " + pedido.toString());
             PedidoDTO respuesta = service.createPedido(pedido);
-
             if (respuesta == null){
                 return ResponseEntity.badRequest().body(Map.of(
                         "status", "Inserción incorrecta",
@@ -109,11 +116,9 @@ public class PedidoController {
             PedidoDTO pedidoActualizado = service.updatePedido(id, pedido);
             return ResponseEntity.ok(pedidoActualizado);
         }
-
         catch (ExceptionDatoNoEncontrado e){
             return ResponseEntity.notFound().build();
         }
-
         catch (ExceptionDatosDuplicados e){
             return ResponseEntity.status(HttpStatus.CONFLICT).body(
                     Map.of("error", "Datos duplicados", "campo", e.getCampoDuplicado())
