@@ -2,6 +2,7 @@ package OrderlyAPI.Expo2025.Services.Factura;
 
 import OrderlyAPI.Expo2025.Entities.Factura.FacturaEntity;
 import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
+import OrderlyAPI.Expo2025.Entities.PedidoDetalle.PedidoDetalleEntity; // <-- NUEVO
 import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.FacturaDTO;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 
 import jakarta.validation.Valid;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -30,18 +32,20 @@ public class FacturaService {
 
     private static final double TIP_RATE = 0.10; // propina 10%
 
+    // ===================== READ =====================
     public Page<FacturaDTO> getAllFacturas(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
         Page<FacturaEntity> factura = repo.findAll(pageable);
         return factura.map(this::convertirAFacturaDTO);
     }
 
+    // ===================== CREATE =====================
     public FacturaDTO createFacturas(@Valid FacturaDTO dto){
         if (dto == null) throw new IllegalArgumentException("La factura no puede ser nula");
 
         try{
             FacturaEntity e = convertirAFacturaEntity(dto);
-            // Si viene IdPedido en el DTO, asociamos referencia (sin EntityManager)
+            // Asociar Pedido por referencia si viene IdPedido
             if (dto.getIdPedido() != null) {
                 PedidoEntity pedRef = pedidoRepo.getReferenceById(dto.getIdPedido());
                 e.setPedido(pedRef);
@@ -54,6 +58,7 @@ public class FacturaService {
         }
     }
 
+    // ===================== DELETE =====================
     public boolean deleteFactura(Long id){
         FacturaEntity obj = repo.findById(id).orElse(null);
         if (obj == null) return false;
@@ -62,51 +67,68 @@ public class FacturaService {
     }
 
     /**
-     * Transaccional único:
-     * - Cambia platillo/cantidad (si vienen)
-     * - Recalcula Subtotal, Propina(10%), TotalPedido
-     * - Aplica DescuentoPct (0..100) y calcula TotalFactura
-     * - Persiste Pedido y Factura
-     * - Devuelve Map con totales
+     * Transaccional único (AJUSTADO a PedidoDetalle):
+     * - Si vienen idPlatillo/cantidad: upsert de la línea (crear o actualizar cantidad)
+     * - Recalcula Subtotal desde todas las líneas del pedido
+     * - Propina = 10% del Subtotal; TotalPedido = Subtotal + Propina
+     * - Aplica DescuentoPct (0..100) sobre TotalPedido y establece Total de la Factura
      */
     @Transactional
     public Map<String, Object> actualizarCompleto(Long idFactura,
                                                   Long idPedido,
-                                                  Long idPlatillo,   // opcional
+                                                  Long idPlatillo,   // opcional (línea a upsert)
                                                   Long cantidad,     // opcional (>=1)
                                                   Double descuentoPct) {
+
         FacturaEntity factura = repo.findById(idFactura)
                 .orElseThrow(() -> new ExceptionDatoNoEncontrado("Factura no encontrada"));
         PedidoEntity pedido = pedidoRepo.findById(idPedido)
                 .orElseThrow(() -> new ExceptionDatoNoEncontrado("Pedido no encontrado"));
 
-        // Cambiar platillo si viene
-        if (idPlatillo != null && (pedido.getPlatillo() == null ||
-                !idPlatillo.equals(pedido.getPlatillo().getId()))) {
+        // Asegurar lista de detalles inicializada
+        if (pedido.getDetalles() == null) {
+            throw new IllegalStateException("El pedido no tiene líneas de detalle inicializadas.");
+        }
+
+        // ==== UPSERT de la línea si viene idPlatillo ====
+        if (idPlatillo != null) {
             PlatilloEntity plat = platilloRepo.findById(idPlatillo)
                     .orElseThrow(() -> new ExceptionDatoNoEncontrado("Platillo no encontrado"));
-            pedido.setPlatillo(plat);
+
+            PedidoDetalleEntity existente = findDetalleByPlatillo(pedido.getDetalles(), idPlatillo);
+
+            if (existente != null) {
+                // Actualizar cantidad si viene; si no viene, dejamos la existente
+                if (cantidad != null && cantidad > 0) {
+                    existente.setCantidad(cantidad.intValue());
+                } else if (existente.getCantidad() == null || existente.getCantidad() < 1) {
+                    existente.setCantidad(1);
+                }
+                // Asegurar precio unitario (si estuviera nulo)
+                if (existente.getPrecioUnitario() == null) {
+                    existente.setPrecioUnitario(plat.getPrecio());
+                }
+            } else {
+                // Crear nueva línea
+                PedidoDetalleEntity det = new PedidoDetalleEntity();
+                det.setPedido(pedido);
+                det.setPlatillo(plat);
+                det.setCantidad((cantidad != null && cantidad > 0) ? cantidad.intValue() : 1);
+                det.setPrecioUnitario(plat.getPrecio());
+                pedido.getDetalles().add(det);
+            }
         }
 
-        // Cambiar cantidad si viene
-        if (cantidad != null && cantidad > 0) {
-            pedido.setCantidad(cantidad);
-        } else if (pedido.getCantidad() == null || pedido.getCantidad() < 1) {
-            pedido.setCantidad(1L);
-        }
-
-        // Recalcular siempre
-        double precio   = pedido.getPlatillo() != null ? pedido.getPlatillo().getPrecio() : 0.0;
-        long cant       = pedido.getCantidad() != null ? pedido.getCantidad() : 1L;
-        double subtotal = round2(precio * cant);
-        double propina  = round2(subtotal * TIP_RATE); // 10%
+        // ==== Recalcular Subtotal desde todas las líneas ====
+        double subtotal = recomputeSubtotalesDesdeDetalle(pedido);
+        double propina  = round2(subtotal * TIP_RATE);
         double totalPed = round2(subtotal + propina);
 
         pedido.setSubtotal(subtotal);
         pedido.setPropina(propina);
         pedido.setTotalPedido(totalPed);
 
-        // DescuentoPct 0..100 (0 permitido)
+        // ==== Descuento de la factura ====
         double pct = (descuentoPct == null ? 0.0 : Math.max(0.0, Math.min(100.0, descuentoPct)));
         double descMonto = round2(totalPed * (pct / 100.0));
         double totalFac  = round2(Math.max(0.0, totalPed - descMonto));
@@ -114,7 +136,7 @@ public class FacturaService {
         factura.setDescuento(descMonto);
         factura.setTotal(totalFac);
 
-        // Persistir
+        // Persistir (cascade en Pedido guardará líneas nuevas/actualizadas)
         pedidoRepo.save(pedido);
         repo.save(factura);
 
@@ -128,6 +150,46 @@ public class FacturaService {
         out.put("DescuentoMonto", descMonto);
         out.put("TotalFactura", totalFac);
         return out;
+    }
+
+    // ===================== Helpers =====================
+
+    /** Busca una línea por IdPlatillo en la lista (null si no existe). */
+    private PedidoDetalleEntity findDetalleByPlatillo(List<PedidoDetalleEntity> detalles, Long idPlatillo) {
+        if (detalles == null) return null;
+        for (PedidoDetalleEntity d : detalles) {
+            if (d.getPlatillo() != null && d.getPlatillo().getId() != null
+                    && d.getPlatillo().getId().equals(idPlatillo)) {
+                return d;
+            }
+        }
+        return null;
+        // Alternativa con streams (si prefieres):
+        // return detalles.stream()
+        //         .filter(d -> d.getPlatillo() != null && idPlatillo.equals(d.getPlatillo().getId()))
+        //         .findFirst().orElse(null);
+    }
+
+    /** Suma cantidad × precioUnitario de todas las líneas (asegurando valores válidos). */
+    private double recomputeSubtotalesDesdeDetalle(PedidoEntity pedido) {
+        double sum = 0.0;
+        if (pedido.getDetalles() == null) return 0.0;
+
+        for (PedidoDetalleEntity d : pedido.getDetalles()) {
+            if (d == null) continue;
+            int cant = (d.getCantidad() != null && d.getCantidad() > 0) ? d.getCantidad() : 0;
+            if (cant == 0) continue;
+
+            Double precio = d.getPrecioUnitario();
+            if (precio == null) {
+                // fallback al precio actual del platillo
+                PlatilloEntity pl = d.getPlatillo();
+                precio = (pl != null) ? pl.getPrecio() : 0.0;
+                d.setPrecioUnitario(precio);
+            }
+            sum += precio * cant;
+        }
+        return round2(sum);
     }
 
     private double round2(double x){ return Math.round(x * 100.0) / 100.0; }
