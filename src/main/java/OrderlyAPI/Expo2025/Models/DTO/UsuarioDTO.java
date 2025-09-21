@@ -20,4 +20,6 @@ public class UsuarioDTO {
     @NotBlank(message = "El correo no puede ser nulo")
     @Email(message = "Asegurate que el correo tenga su formato correspondiente, ejemplo: usuario@gmail.com")
     private String correo;
+
+
 }
