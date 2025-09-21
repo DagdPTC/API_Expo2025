@@ -3,8 +3,8 @@ package OrderlyAPI.Expo2025.Controller.Platillo;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatosDuplicados;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.PlatilloDTO;
-import OrderlyAPI.Expo2025.Services.Platillo.PlatilloService;
 import OrderlyAPI.Expo2025.Services.Cloudinary.CloudinaryService;
+import OrderlyAPI.Expo2025.Services.Platillo.PlatilloService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,14 +22,16 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/apiPlatillo")
-@CrossOrigin(origins = {"http://localhost:5500", "http://127.0.0.1:5500", "http://localhost"})
+// Unificado: permitir CORS amplio (como en el código 2). Si prefieres orígenes específicos del código 1,
+// cambia por: @CrossOrigin(origins = {"http://localhost:5500", "http://127.0.0.1:5500", "http://localhost"})
+@CrossOrigin
 public class PlatilloController {
 
     @Autowired
     private PlatilloService service;
 
-    @Autowired
-    private CloudinaryService cloudinaryService;
+    @Autowired(required = false)
+    private CloudinaryService cloudinaryService; // opcional para permitir arrancar sin Cloudinary si no se inyecta
 
     // ===================== GET =====================
     @GetMapping("/getDataPlatillo")
@@ -38,6 +40,7 @@ public class PlatilloController {
             @RequestParam(defaultValue = "10") int size
     ) {
         if (size <= 0 || size > 50) {
+            // Mensaje claro (de ambos códigos)
             return ResponseEntity.badRequest().body(Map.of(
                     "status", "error",
                     "message", "El parámetro size debe estar entre 1 y 50"
@@ -45,6 +48,14 @@ public class PlatilloController {
         }
         try {
             Page<PlatilloDTO> datos = service.getAllPlatillos(page, size);
+            if (datos == null || datos.isEmpty()) {
+                // Compatibilidad con mensaje del código 2 cuando no hay datos
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "error",
+                        "message", "No hay platillos registrados"
+                ));
+            }
+            // Ambos códigos retornaban Page en OK
             return ResponseEntity.ok(datos);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
@@ -60,6 +71,15 @@ public class PlatilloController {
     public ResponseEntity<?> crear(@Valid @RequestBody PlatilloDTO platillo, HttpServletRequest request) {
         try {
             PlatilloDTO respuesta = service.createPlatillo(platillo);
+            if (respuesta == null) {
+                // Mensaje de validación (del código 2)
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "Inserción incorrecta",
+                        "errorType", "VALIDATION_ERROR",
+                        "message", "Datos del usuario inválidos"
+                ));
+            }
+            // Estructura de éxito (del código 1)
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "status", "success",
                     "data", respuesta
@@ -70,9 +90,10 @@ public class PlatilloController {
                     "message", ex.getReason()
             ));
         } catch (Exception e) {
+            // Mensaje de error con wording del código 2 y 1
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "status", "error",
-                    "message", "Error al registrar platillo",
+                    "message", "Error al registrar usuario",
                     "detail", e.getMessage()
             ));
         }
@@ -86,6 +107,12 @@ public class PlatilloController {
     ) {
         try {
             if (file != null && !file.isEmpty()) {
+                if (cloudinaryService == null) {
+                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                            "status", "error",
+                            "message", "Servicio de imágenes no disponible"
+                    ));
+                }
                 String imageUrl = cloudinaryService.uploadImage(file); // se guarda en folder "menu"
                 platilloDTO.setImagenUrl(imageUrl);
                 String publicId = extractPublicIdFromUrl(imageUrl);
@@ -125,20 +152,39 @@ public class PlatilloController {
 
         try {
             PlatilloDTO actualizado = service.updatePlatillo(id, platillo);
+
+            // Para compatibilidad con ambos códigos:
+            // - Código 1: { status: success, data: ... }
+            // - Código 2: retorna directamente el DTO
+            // Escogemos la forma envolviendo en Map (más rica). Si necesitas el DTO "raw", descomenta la línea de abajo.
+            // return ResponseEntity.ok(actualizado);
             return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "data", actualizado
             ));
         } catch (ExceptionDatoNoEncontrado e) {
+            // Código 1: NOT_FOUND con mensaje / Código 2: notFound().build()
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
                     "status", "error",
                     "message", "Platillo no encontrado"
             ));
         } catch (ExceptionDatosDuplicados e) {
+            // Mensaje de conflicto (ambos códigos)
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
                     "status", "error",
                     "message", "Datos duplicados",
                     "campo", e.getCampoDuplicado()
+            ));
+        } catch (ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode()).body(Map.of(
+                    "status", "error",
+                    "message", ex.getReason()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "status", "error",
+                    "message", "Error al actualizar el Platillo",
+                    "detail", e.getMessage()
             ));
         }
     }
@@ -152,6 +198,12 @@ public class PlatilloController {
     ) {
         try {
             if (file != null && !file.isEmpty()) {
+                if (cloudinaryService == null) {
+                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                            "status", "error",
+                            "message", "Servicio de imágenes no disponible"
+                    ));
+                }
                 String imageUrl = cloudinaryService.uploadImage(file); // se guarda en folder "menu"
                 platilloDTO.setImagenUrl(imageUrl);
                 String publicId = extractPublicIdFromUrl(imageUrl);
@@ -180,12 +232,16 @@ public class PlatilloController {
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         try {
             if (!service.deletePlatillo(id)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-                        "status", "error",
-                        "message", "Platillo no encontrado",
-                        "timestamp", Instant.now().toString()
-                ));
+                // Mezcla de ambos códigos para mensaje y cabecera opcional
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .header("X-Mensaje-Error", "Platillo no encontrado")
+                        .body(Map.of(
+                                "status", "error",
+                                "message", "Platillo no encontrado",
+                                "timestamp", Instant.now().toString()
+                        ));
             }
+            // Estructura de éxito de ambos
             return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "message", "Platillo eliminado exitosamente"

@@ -10,6 +10,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,17 +28,17 @@ public class PlatilloService {
     private PlatilloRepository repo;
 
     @PersistenceContext
-    EntityManager entityManager;
+    private EntityManager entityManager;
 
     // ===================== READ =====================
-    public Page<PlatilloDTO> getAllPlatillos(int page, int size){
+    public Page<PlatilloDTO> getAllPlatillos(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<PlatilloEntity> platillos = repo.findAll(pageable);
         return platillos.map(this::convertirAPlatillosDTO);
     }
 
     // ===================== CREATE =====================
-    public PlatilloDTO createPlatillo(@Valid PlatilloDTO platilloDTO){
+    public PlatilloDTO createPlatillo(@Valid PlatilloDTO platilloDTO) {
         if (platilloDTO == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El platillo no puede ser nulo");
         }
@@ -61,21 +62,23 @@ public class PlatilloService {
     }
 
     // ===================== UPDATE =====================
-    public PlatilloDTO updatePlatillo(Long id, @Valid PlatilloDTO platillo){
+    public PlatilloDTO updatePlatillo(Long id, @Valid PlatilloDTO platillo) {
         PlatilloEntity existente = repo.findById(id)
                 .orElseThrow(() -> new ExceptionDatoNoEncontrado("Platillo no encontrado"));
 
-        // Campos simples
+        // Campos simples (update parcial)
         if (platillo.getNomPlatillo() != null) existente.setNomPlatillo(platillo.getNomPlatillo());
         if (platillo.getDescripcion() != null) existente.setDescripcion(platillo.getDescripcion());
-        existente.setPrecio(platillo.getPrecio()); // valida rangos en DTO
 
-        // Imagen
+        // Precio: si te interesa permitir null (no enviar), puedes envolverlo con una comprobación adicional
+        existente.setPrecio(platillo.getPrecio());
+
+        // Imagen (Cloudinary)
         if (platillo.getImagenUrl() != null) existente.setImagenUrl(platillo.getImagenUrl());
         if (platillo.getPublicId() != null)   existente.setPublicId(platillo.getPublicId());
 
-        // Categoría (si viene la cambiamos; si no, mantenemos la actual)
-        if (platillo.getIdCate() != null){
+        // Categoría (si viene, se cambia; si no, se mantiene)
+        if (platillo.getIdCate() != null) {
             CategoriaEntity categoria = entityManager.getReference(CategoriaEntity.class, platillo.getIdCate());
             existente.setCategoria(categoria);
         }
@@ -85,17 +88,26 @@ public class PlatilloService {
     }
 
     // ===================== DELETE =====================
-    public boolean deletePlatillo(Long id){
-        PlatilloEntity obj = repo.findById(id).orElse(null);
-        if (obj != null){
-            repo.deleteById(id);
-            return true;
+    public boolean deletePlatillo(Long id) {
+        try {
+            PlatilloEntity obj = repo.findById(id).orElse(null);
+            if (obj != null) {
+                repo.deleteById(id);
+                return true;
+            }
+            return false;
+        } catch (EmptyResultDataAccessException e) {
+            // Compatibilidad con comportamiento del código 2
+            log.warn("No se encontró platillo con ID {} para eliminar.", id);
+            return false;
+        } catch (Exception e) {
+            log.error("Error al eliminar platillo {}: {}", id, e.getMessage(), e);
+            throw e;
         }
-        return false;
     }
 
     // ===================== MAPEOS =====================
-    public PlatilloEntity convertirAPlatillosEntity(PlatilloDTO dto){
+    public PlatilloEntity convertirAPlatillosEntity(PlatilloDTO dto) {
         PlatilloEntity e = new PlatilloEntity();
         e.setId(dto.getId());
         e.setNomPlatillo(dto.getNomPlatillo());
@@ -105,16 +117,15 @@ public class PlatilloService {
         e.setPublicId(dto.getPublicId());
 
         // Requerido en CREATE (IdCate no debe ser null); en UPDATE lo maneja el método
-        if (dto.getIdCate() != null){
+        if (dto.getIdCate() != null) {
             e.setCategoria(entityManager.getReference(CategoriaEntity.class, dto.getIdCate()));
         } else {
-            // Si llega null aquí es porque llamaron convertirAPlatillosEntity sin IdCate; forzamos error claro.
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La categoría (IdCate) es requerida");
         }
         return e;
     }
 
-    public PlatilloDTO convertirAPlatillosDTO(PlatilloEntity e){
+    public PlatilloDTO convertirAPlatillosDTO(PlatilloEntity e) {
         PlatilloDTO d = new PlatilloDTO();
         d.setId(e.getId());
         d.setNomPlatillo(e.getNomPlatillo());
@@ -122,7 +133,6 @@ public class PlatilloService {
         d.setPrecio(e.getPrecio());
         d.setImagenUrl(e.getImagenUrl());
         d.setPublicId(e.getPublicId());
-        // En teoría nunca es null (FK NOT NULL), pero prevenimos NPE
         d.setIdCate(e.getCategoria() != null ? e.getCategoria().getId() : null);
         return d;
     }

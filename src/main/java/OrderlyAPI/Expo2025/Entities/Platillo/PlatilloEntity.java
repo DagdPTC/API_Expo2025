@@ -2,6 +2,7 @@ package OrderlyAPI.Expo2025.Entities.Platillo;
 
 import OrderlyAPI.Expo2025.Entities.Categoria.CategoriaEntity;
 import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
+import OrderlyAPI.Expo2025.Entities.PedidoDetalle.PedidoDetalleEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
@@ -43,7 +44,7 @@ public class PlatilloEntity {
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<PedidoEntity> pedidos;
+    private List<PedidoDetalleEntity> pedidos;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IDCATEGORIA", referencedColumnName = "IDCATEGORIA", nullable = false)

@@ -1,131 +1,271 @@
 package OrderlyAPI.Expo2025.Services.Pedido;
 
-import OrderlyAPI.Expo2025.Entities.Empleado.EmpleadoEntity;
-import OrderlyAPI.Expo2025.Entities.EstadoPedido.EstadoPedidoEntity;
-import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
-import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
-import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
-import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
-import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
-import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.PedidoDTO;
-import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
-import OrderlyAPI.Expo2025.Repositories.Pedido.PedidoRepository;
-import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
+import OrderlyAPI.Expo2025.Models.DTO.PedidoItemDTO;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 @Service
-@Slf4j
-@CrossOrigin
 public class PedidoService {
 
     @Autowired
-    private PedidoRepository repo;
+    private JdbcTemplate jdbcTemplate;
 
-    @PersistenceContext
-    EntityManager entityManager;
+    /* =========================================================
+       LISTAR (paginado)  — desde tabla PEDIDO
+       ========================================================= */
+    public Page<PedidoDTO> getDataPedido(int page, int size) {
+        if (size <= 0) size = 10;
+        if (page < 0) page = 0;
 
-    public Page<PedidoDTO> getAllPedidos(int page, int size){
-        Pageable pageable = PageRequest.of(page, size);
-        Page<PedidoEntity> pedidos = repo.findAll(pageable);
-        return pedidos.map(this::convertirAPedidosDTO);
-    }
+        long total = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM PEDIDO", Long.class);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
-    public PedidoDTO createPedido(@Valid PedidoDTO pedidoDTO){
-        if (pedidoDTO == null){
-            throw new IllegalArgumentException("El pedido no puede ser nulo");
+        String sql =
+                "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, IDESTADOPEDIDO, " +
+                        "       OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO " +
+                        "FROM PEDIDO " +
+                        "ORDER BY IDPEDIDO DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        List<PedidoDTO> content = jdbcTemplate.query(
+                sql,
+                new Object[]{ page * size, size },
+                pedidoRowMapper()
+        );
+
+        for (PedidoDTO dto : content) {
+            dto.setItems(listarItems(dto.getId()));
         }
-        try{
-            PedidoEntity pedidoEntity = convertirAPedidossEntity(pedidoDTO);
-            PedidoEntity pedidoGuardado = repo.save(pedidoEntity);
-            return convertirAPedidosDTO(pedidoGuardado);
-        }catch (Exception e){
-            log.error("Error al registrar pedido: " + e.getMessage());
-            throw new ExceptionDatoNoEncontrado("Error al registrar el pedido" + e.getMessage());
-        }
+
+        return new PageImpl<>(content, pageable, total);
     }
 
-    public PedidoDTO updatePedido(Long id, @Valid PedidoDTO pedido){
-        PedidoEntity pedidoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Pedido no encontrado"));
-
-        pedidoExistente.setNombrecliente(pedido.getNombrecliente());
-        pedidoExistente.setMesas(pedidoExistente.getMesas());
-        pedidoExistente.setEmpleado(pedidoExistente.getEmpleado());
-        pedidoExistente.setFPedido(pedido.getFPedido());
-        pedidoExistente.setEstpedido(pedidoExistente.getEstpedido());
-        pedidoExistente.setObservaciones(pedido.getObservaciones());
-        pedidoExistente.setCantidad(pedido.getCantidad());
-        pedidoExistente.setTotalPedido(pedido.getTotalPedido());
-        pedidoExistente.setSubtotal(pedido.getSubtotal());
-        pedidoExistente.setPropina(pedido.getPropina());
-        pedidoExistente.setPlatillo(pedidoExistente.getPlatillo());
-
-        PedidoEntity pedidoActualizado = repo.save(pedidoExistente);
-        return convertirAPedidosDTO(pedidoActualizado);
+    /* =========================================================
+       OBTENER POR ID
+       ========================================================= */
+    public PedidoDTO getById(Long id) {
+        String sql =
+                "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, IDESTADOPEDIDO, " +
+                        "       OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO " +
+                        "FROM PEDIDO WHERE IDPEDIDO = ?";
+        List<PedidoDTO> list = jdbcTemplate.query(sql, new Object[]{ id }, pedidoRowMapper());
+        if (list.isEmpty()) throw new RuntimeException("Pedido no encontrado");
+        PedidoDTO dto = list.get(0);
+        dto.setItems(listarItems(id));
+        return dto;
     }
 
-    public boolean deletePedido(Long id){
-        try{
-            PedidoEntity objPedido = repo.findById(id).orElse(null);
-            if (objPedido != null){
-                repo.deleteById(id);
-                return true;
-            }else{
-                System.out.println("Pedido no encontrado");
-                return false;
+    /* =========================================================
+       CREAR
+       ========================================================= */
+    @Transactional
+    public PedidoDTO createPedido(PedidoDTO dto) {
+        validarDto(dto, true);
+
+        // Tomamos ID de la secuencia (aunque hay trigger, esto nos da el ID para insertar detalle)
+        Long idNuevo = jdbcTemplate.queryForObject("SELECT PEDIDO_SEQ.NEXTVAL FROM DUAL", Long.class);
+
+        String insert =
+                "INSERT INTO PEDIDO " +
+                        "(IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, IDESTADOPEDIDO, " +
+                        " OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO) " +
+                        "VALUES (?, ?, ?, ?, SYSDATE, ?, ?, ?, ?, ?)";
+
+        jdbcTemplate.update(
+                insert,
+                idNuevo,
+                nvl(dto.getNombreCliente(), ""),
+                req(dto.getIdMesa()),
+                req(dto.getIdEmpleado()),
+                req(dto.getIdEstadoPedido()),
+                nvl(dto.getObservaciones(), ""),
+                toDouble(dto.getSubtotal()),
+                toDouble(dto.getPropina()),
+                toDouble(dto.getTotalPedido())
+        );
+
+        List<PedidoItemDTO> compact = compactarItems(dto.getItems());
+        insertarDetalle(idNuevo, compact);
+
+        return getById(idNuevo);
+    }
+
+    /* =========================================================
+       MODIFICAR
+       ========================================================= */
+    @Transactional
+    public PedidoDTO modificarPedido(Long id, PedidoDTO dto) {
+        if (id == null) throw new IllegalArgumentException("ID de pedido requerido");
+        validarDto(dto, false);
+
+        String update =
+                "UPDATE PEDIDO SET " +
+                        "NOMBRECLIENTE = ?, " +
+                        "IDMESA = ?, " +
+                        "IDEMPLEADO = ?, " +
+                        "IDESTADOPEDIDO = ?, " +
+                        "OBSERVACIONES = ?, " +
+                        "SUBTOTAL = ?, " +
+                        "PROPINA = ?, " +
+                        "TOTALPEDIDO = ? " +
+                        "WHERE IDPEDIDO = ?";
+
+        int rows = jdbcTemplate.update(
+                update,
+                nvl(dto.getNombreCliente(), ""),
+                req(dto.getIdMesa()),
+                req(dto.getIdEmpleado()),
+                req(dto.getIdEstadoPedido()),
+                nvl(dto.getObservaciones(), ""),
+                toDouble(dto.getSubtotal()),
+                toDouble(dto.getPropina()),
+                toDouble(dto.getTotalPedido()),
+                id
+        );
+        if (rows == 0) throw new RuntimeException("Pedido no encontrado");
+
+        // Regenerar detalle para evitar ORA-00001 (UQ_PedidoDet_Linea)
+        jdbcTemplate.update("DELETE FROM PEDIDODETALLE WHERE IDPEDIDO = ?", id);
+        List<PedidoItemDTO> compact = compactarItems(dto.getItems());
+        insertarDetalle(id, compact);
+
+        return getById(id);
+    }
+
+    /* =========================================================
+       ELIMINAR
+       ========================================================= */
+    @Transactional
+    public boolean eliminarPedido(Long id) {
+        jdbcTemplate.update("DELETE FROM PEDIDODETALLE WHERE IDPEDIDO = ?", id);
+        int r = jdbcTemplate.update("DELETE FROM PEDIDO WHERE IDPEDIDO = ?", id);
+        return r > 0;
+    }
+
+    /* =========================================================
+       HELPERS
+       ========================================================= */
+
+    private RowMapper<PedidoDTO> pedidoRowMapper() {
+        return new RowMapper<PedidoDTO>() {
+            @Override
+            public PedidoDTO mapRow(ResultSet rs, int rowNum) throws SQLException {
+                PedidoDTO dto = new PedidoDTO();
+                dto.setId(rs.getLong("IDPEDIDO"));
+                dto.setNombreCliente(rs.getString("NOMBRECLIENTE"));
+
+                long v;
+                v = rs.getLong("IDMESA");         if (!rs.wasNull()) dto.setIdMesa(v);
+                v = rs.getLong("IDEMPLEADO");     if (!rs.wasNull()) dto.setIdEmpleado(v);
+                v = rs.getLong("IDESTADOPEDIDO"); if (!rs.wasNull()) dto.setIdEstadoPedido(v);
+
+                dto.setObservaciones(rs.getString("OBSERVACIONES"));
+                dto.setSubtotal(rs.getDouble("SUBTOTAL"));
+                dto.setPropina(rs.getDouble("PROPINA"));
+                dto.setTotalPedido(rs.getDouble("TOTALPEDIDO"));
+                return dto;
             }
-        }catch (EmptyResultDataAccessException e){
-            throw new EmptyResultDataAccessException("No se encontro pedido con ID:" + id + " para eliminar.", 1);
+        };
+    }
+
+    private List<PedidoItemDTO> listarItems(Long idPedido) {
+        String sql =
+                "SELECT IDPLATILLO, CANTIDAD, PRECIOUNITARIO " +
+                        "FROM PEDIDODETALLE WHERE IDPEDIDO = ? ORDER BY IDDETALLE";
+
+        return jdbcTemplate.query(sql, new Object[]{ idPedido }, new RowMapper<PedidoItemDTO>() {
+            @Override
+            public PedidoItemDTO mapRow(ResultSet rs, int rowNum) throws SQLException {
+                PedidoItemDTO it = new PedidoItemDTO();
+                it.setIdPlatillo(rs.getLong("IDPLATILLO"));
+                it.setCantidad(rs.getInt("CANTIDAD"));
+                it.setPrecioUnitario(rs.getDouble("PRECIOUNITARIO"));
+                return it;
+            }
+        });
+    }
+
+    private void insertarDetalle(Long idPedido, List<PedidoItemDTO> items) {
+        if (items == null || items.isEmpty()) {
+            throw new IllegalArgumentException("Items: Debe incluir al menos un platillo");
+        }
+        final String sql =
+                "INSERT INTO PEDIDODETALLE (IDPEDIDO, IDPLATILLO, CANTIDAD, PRECIOUNITARIO) " +
+                        "VALUES (?, ?, ?, ?)";
+
+        for (PedidoItemDTO it : items) {
+            if (it == null) continue;
+            Long idPlat = it.getIdPlatillo();
+            Integer cant = (it.getCantidad() != null && it.getCantidad() > 0) ? it.getCantidad() : 1;
+            Double precio = toDouble(it.getPrecioUnitario());
+            if (idPlat == null) throw new IllegalArgumentException("Items: idPlatillo es requerido");
+            jdbcTemplate.update(sql, idPedido, idPlat, cant, precio);
         }
     }
 
-
-    public PedidoEntity convertirAPedidossEntity(PedidoDTO pedido){
-        PedidoEntity dto = new PedidoEntity();
-        dto.setId(pedido.getId());
-        dto.setNombrecliente(pedido.getNombrecliente());
-        dto.setMesas(entityManager.getReference(MesaEntity.class, pedido.getIdMesa()));
-        dto.setEmpleado(entityManager.getReference(EmpleadoEntity.class, pedido.getIdEmpleado()));
-        dto.setFPedido(pedido.getFPedido());
-        dto.setEstpedido(entityManager.getReference(EstadoPedidoEntity.class, pedido.getIdEstadoPedido()));
-        dto.setObservaciones(pedido.getObservaciones());
-        dto.setObservaciones(pedido.getObservaciones());
-        dto.setCantidad(pedido.getCantidad());
-        dto.setTotalPedido(pedido.getTotalPedido());
-        dto.setSubtotal(pedido.getSubtotal());
-        dto.setPropina(pedido.getPropina());
-        dto.setPlatillo(entityManager.getReference(PlatilloEntity.class, pedido.getIdPlatillo()));
-        return dto;
+    /** Reglas mínimas: nombre, ids y al menos un item. Totales los dejamos tal como vengan (el frontend ya los calcula). */
+    private void validarDto(PedidoDTO dto, boolean crear) {
+        if (dto == null) throw new IllegalArgumentException("Payload requerido");
+        if (dto.getNombreCliente() == null || dto.getNombreCliente().trim().isEmpty()) {
+            throw new IllegalArgumentException("NombreCliente es requerido");
+        }
+        if (dto.getIdMesa() == null)         throw new IllegalArgumentException("IdMesa es requerido");
+        if (dto.getIdEmpleado() == null)     throw new IllegalArgumentException("IdEmpleado es requerido");
+        if (dto.getIdEstadoPedido() == null) throw new IllegalArgumentException("IdEstadoPedido es requerido");
+        if (dto.getItems() == null || dto.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Items: Debe incluir al menos un platillo");
+        }
+        // Nota: NO comparamos dto.getSubtotal()/getPropina()/getTotalPedido() con null
+        // porque en tu DTO podrían ser primitivos (double) y eso da error de compilación.
+        // Se mandan tal cual desde el frontend.
     }
 
-    public PedidoDTO convertirAPedidosDTO(PedidoEntity pedido){
-        PedidoDTO dto = new PedidoDTO();
-        dto.setId(pedido.getId());
-        dto.setNombrecliente(pedido.getNombrecliente());
-        dto.setIdMesa(pedido.getMesas().getId());
-        dto.setIdEmpleado(pedido.getEmpleado().getId());
-        dto.setFPedido(pedido.getFPedido());
-        dto.setIdEstadoPedido(pedido.getEstpedido().getId());
-        dto.setObservaciones(pedido.getObservaciones());
-        dto.setObservaciones(pedido.getObservaciones());
-        dto.setCantidad(pedido.getCantidad());
-        dto.setTotalPedido(pedido.getTotalPedido());
-        dto.setSubtotal(pedido.getSubtotal());
-        dto.setPropina(pedido.getPropina());
-        dto.setIdPlatillo(pedido.getPlatillo().getId());
-        return dto;
+    private String nvl(String s, String def) {
+        return (s == null) ? def : s;
+    }
+
+    private Double toDouble(Number n) {
+        return (n == null) ? 0.0 : n.doubleValue();
+    }
+
+    /** Valida requerido (no nulo) para IDs. */
+    private Long req(Long v) {
+        if (v == null) throw new IllegalArgumentException("Valor requerido");
+        return v;
+    }
+
+    /**
+     * Agrupa items por IdPlatillo sumando cantidades, conservando el último precio unitario no nulo.
+     * Evita violar UQ_PedidoDet_Linea (IdPedido, IdPlatillo).
+     */
+    private List<PedidoItemDTO> compactarItems(List<PedidoItemDTO> items) {
+        if (items == null) return Collections.emptyList();
+        Map<Long, PedidoItemDTO> map = new LinkedHashMap<>();
+        for (PedidoItemDTO it : items) {
+            if (it == null || it.getIdPlatillo() == null) continue;
+            long idPlat = it.getIdPlatillo();
+            int cant = (it.getCantidad() != null && it.getCantidad() > 0) ? it.getCantidad() : 1;
+            double precio = toDouble(it.getPrecioUnitario());
+            PedidoItemDTO acc = map.get(idPlat);
+            if (acc == null) {
+                PedidoItemDTO n = new PedidoItemDTO();
+                n.setIdPlatillo(idPlat);
+                n.setCantidad(cant);
+                n.setPrecioUnitario(precio);
+                map.put(idPlat, n);
+            } else {
+                acc.setCantidad(acc.getCantidad() + cant);
+                if (precio > 0) acc.setPrecioUnitario(precio);
+            }
+        }
+        return new ArrayList<>(map.values());
     }
 }
