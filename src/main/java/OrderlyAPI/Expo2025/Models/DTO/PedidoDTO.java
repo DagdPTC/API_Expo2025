@@ -4,48 +4,42 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.sql.Timestamp;
-import java.text.DecimalFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.List;
 
 @Getter @Setter
 public class PedidoDTO {
 
     private Long Id;
 
-    @NotBlank(message = "El nombre cliente no puede ser nulo")
-    @Size(max = 100, message = "El nombre del cliente no puede tener mas de 100 caracteres")
-    private String Nombrecliente;
+    @NotBlank
+    private String NombreCliente;
 
+    @NotNull
     private Long IdMesa;
 
+    @NotNull
     private Long IdEmpleado;
 
-    private LocalDate FPedido;
+    @NotNull
+    private LocalDateTime FPedido;
 
+    @NotNull
     private Long IdEstadoPedido;
 
-    @NotBlank(message = "Las observacion no puede ser nula")
-    @Size(max = 100, message = "Las observaciones no pueden tener mas de 100 caracteres")
+    @NotBlank
     private String Observaciones;
 
-    @NotNull(message = "La cantidad no puede ser nula") // ← CAMBIA @NotBlank por @NotNull
-    @Min(value = 1, message = "La cantidad no puede ser cero o negativa")
-    private Long Cantidad;
-
-    @DecimalMin(value = "0.01", message = "El total pedido debe ser mayor de 0.01")
-    @DecimalMax(value = "99999999.99", message = "El total pedido debe ser menor de 99999999.99")
-    private double TotalPedido;
-
-    @DecimalMin(value = "0.01", message = "El subtotal debe ser mayor de 0.01")
-    @DecimalMax(value = "99999999.99", message = "El subtotal debe ser menor de 99999999.99")
+    @DecimalMin("0.00") @DecimalMax("99999999.99")
     private double Subtotal;
 
-    @DecimalMin(value = "0.01", message = "La propina debe ser mayor de 0.01")
-    @DecimalMax(value = "99999999.99", message = "La propina debe ser menor de 99999999.99")
+    @DecimalMin("0.00") @DecimalMax("99999999.99")
     private double Propina;
 
-    private Long IdPlatillo;
+    @DecimalMin("0.00") @DecimalMax("99999999.99")
+    private double TotalPedido;
+
+    // ---- NUEVO: listado de líneas ----
+    @NotNull @Size(min = 1, message = "Debe incluir al menos un platillo")
+    private List<PedidoItemDTO> Items;
 }

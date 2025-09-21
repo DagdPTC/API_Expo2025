@@ -2,75 +2,64 @@ package OrderlyAPI.Expo2025.Entities.Pedido;
 
 import OrderlyAPI.Expo2025.Entities.Empleado.EmpleadoEntity;
 import OrderlyAPI.Expo2025.Entities.EstadoPedido.EstadoPedidoEntity;
-import OrderlyAPI.Expo2025.Entities.Factura.FacturaEntity;
-import OrderlyAPI.Expo2025.Entities.HistorialPedido.HistorialPedidoEntity;
 import OrderlyAPI.Expo2025.Entities.Mesa.MesaEntity;
-import OrderlyAPI.Expo2025.Entities.Persona.PersonaEntity;
-import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
-import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
+import OrderlyAPI.Expo2025.Entities.PedidoDetalle.PedidoDetalleEntity;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.sql.Timestamp;
-import java.text.DecimalFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 
+@Getter @Setter
 @Entity
 @Table(name = "PEDIDO")
-@Getter @Setter @ToString @EqualsAndHashCode
+@ToString @EqualsAndHashCode
 public class PedidoEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pedido_seq")
-    @SequenceGenerator(name = "pedido_seq", sequenceName = "pedido_seq", allocationSize = 1)
+    @SequenceGenerator(
+            name = "pedido_seq",
+            sequenceName = "pedido_seq",   // <-- tu secuencia en Oracle
+            allocationSize = 1
+    )
     @Column(name = "IDPEDIDO")
-    private Long Id;
+    private Long id;
 
-    @Column(name = "NOMBRECLIENTE")
-    private String Nombrecliente;
-
-    @Column(name = "FECHAPEDIDO")
-    private LocalDate FPedido;
-
-    @Column(name = "OBSERVACIONES")
-    private String Observaciones;
-
-    @Column(name = "CANTIDAD")
-    private Long Cantidad;
-
-    @Column(name = "TOTALPEDIDO")
-    private double TotalPedido;
-
-    @Column(name = "SUBTOTAL")
-    private double Subtotal;
-
-    @Column(name = "PROPINA")
-    private double Propina;
-
-    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
-    private List<FacturaEntity> pedido;
-
-    @OneToMany(mappedBy = "pedidos", cascade = CascadeType.ALL)
-    private List<HistorialPedidoEntity> pedidos;
+    @Column(name = "NOMBRECLIENTE", nullable = false, length = 100)
+    private String nombreCliente;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "IDMESA", referencedColumnName = "IDMESA")
+    @JoinColumn(name = "IDMESA", referencedColumnName = "IDMESA", nullable = false)
     private MesaEntity mesas;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "IDEMPLEADO", referencedColumnName = "IDEMPLEADO")
+    @JoinColumn(name = "IDEMPLEADO", referencedColumnName = "IDEMPLEADO", nullable = false)
     private EmpleadoEntity empleado;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "IDESTADOPEDIDO", referencedColumnName = "IDESTADOPEDIDO")
-    private EstadoPedidoEntity estpedido;
+    @Column(name = "FECHAPEDIDO", nullable = false)
+    private LocalDateTime fPedido;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "IDPLATILLO", referencedColumnName = "IDPLATILLO")
-    private PlatilloEntity platillo;
+    @JoinColumn(name = "IDESTADOPEDIDO", referencedColumnName = "IDESTADOPEDIDO", nullable = false)
+    private EstadoPedidoEntity estpedido;
+
+    @Column(name = "OBSERVACIONES", nullable = false, length = 100)
+    private String observaciones;
+
+    @Column(name = "SUBTOTAL", nullable = false)
+    private Double subtotal;
+
+    @Column(name = "PROPINA", nullable = false)
+    private Double propina;
+
+    @Column(name = "TOTALPEDIDO", nullable = false)
+    private Double totalPedido;
+
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<PedidoDetalleEntity> detalles = new ArrayList<>();
 }
