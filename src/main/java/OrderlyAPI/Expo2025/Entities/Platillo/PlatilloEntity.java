@@ -36,15 +36,23 @@ public class PlatilloEntity {
     @Column(name = "IMAGENURL")
     private String imagenUrl;
 
-    // Nuevo: publicId de Cloudinary para gestionar la imagen (borrar / transformar)
+    // publicId de Cloudinary para gestión de imagen
     @Column(name = "PUBLICID")
     private String publicId;
 
+    // Relación usada por el código 1
     @OneToMany(mappedBy = "platillo", cascade = CascadeType.ALL)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<PedidoDetalleEntity> pedidos;
+    private List<PedidoEntity> pedidos;
+
+    // Relación usada por el código 2
+    @OneToMany(mappedBy = "platillo", cascade = CascadeType.ALL)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<PedidoDetalleEntity> pedidosDetalle;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IDCATEGORIA", referencedColumnName = "IDCATEGORIA", nullable = false)
