@@ -14,17 +14,17 @@ public class AuthService {
     @Autowired
     private UsuarioRepository repo;
 
-    public boolean login(String correo, String contrasena){
+    public boolean login(String correo, String contrasenia){
         Argon2Password obHash = new Argon2Password();
-        Optional<Object> list = repo.findByCorreo(correo).stream().findFirst();
+        Optional<UsuarioEntity> list = repo.findByCorreo(correo).stream().findFirst();
         if (list.isPresent()){
-            UsuarioEntity usuario = (UsuarioEntity) list.get();
-            String nombreTipoUsuario = usuario.getRol().getUrol();
+            UsuarioEntity usuario = list.get();
+            String nombreTipoUsuario = usuario.getRol().getRol();
             System.out.println("Usuario ID encontrado: " + usuario.getId()+
                     ", email: " + usuario.getCorreo() +
                     ", rol: " + nombreTipoUsuario);
             //obtenrer la clasve del usuario que esta en la base de datos
-            return obHash.verifyPassword(usuario.getContrasenia(), contrasena);
+            return obHash.verifyPassword(usuario.getContrasenia(), contrasenia);
             // String HasDB = usuario.getContrasena();
             // boolean verificado = obHash.verifyPassword(HasDB, contrasena);
             //return verificado;
