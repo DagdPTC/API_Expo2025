@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -23,32 +24,26 @@ public class SecurityConfig {
         this.jwtCookieAuthFilter = jwtCookieAuthFilter;
     }
 
-    // Configuración de seguridad HTTP
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        //Aqui van todos los endPoints públicos que no requieren de un JWT
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())  // Nuevo estilo lambda
-                .authorizeHttpRequests(auth -> auth  // Cambia authorizeRequests por authorizeHttpRequests
-                        .requestMatchers(HttpMethod
-                                        .POST,
-                                "/api/auth/login",
-                                "/api/auth/logout")
-                        .permitAll()
+                .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/test/admin-only").hasRole("Administrador")
                         .requestMatchers("/api/test/cliente-only").hasRole("Cliente")
-                        .anyRequest().authenticated())
-                .sessionManagement(sess -> sess
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore((Filter) jwtCookieAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
-    // Exponer el AuthenticationManager como bean
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
-
 }
