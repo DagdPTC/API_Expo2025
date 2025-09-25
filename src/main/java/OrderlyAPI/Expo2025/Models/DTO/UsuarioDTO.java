@@ -11,6 +11,9 @@ public class UsuarioDTO {
 
     private Long Id;
 
+    @NotBlank(message = "El nombre usuario no puede ser nulo")
+    private String nombreusuario;
+
     @NotBlank(message = "La contraseña no puede ser nula")
     @Size(min = 8, max = 8, message = "La contraseña debe tener al menos dos caracteres")
     private String contrasenia;
@@ -20,4 +23,6 @@ public class UsuarioDTO {
     @NotBlank(message = "El correo no puede ser nulo")
     @Email(message = "Asegurate que el correo tenga su formato correspondiente, ejemplo: usuario@gmail.com")
     private String correo;
+
+
 }

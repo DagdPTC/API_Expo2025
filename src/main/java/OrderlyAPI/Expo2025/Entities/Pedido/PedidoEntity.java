@@ -41,8 +41,11 @@ public class PedidoEntity {
     @JoinColumn(name = "IDEMPLEADO", referencedColumnName = "IDEMPLEADO", nullable = false)
     private EmpleadoEntity empleado;
 
-    @Column(name = "FECHAPEDIDO", nullable = false)
-    private LocalDateTime fPedido;
+    @Column(name = "HORAINICIO", nullable = false)   // antes: FECHAPEDIDO
+    private LocalDateTime fechaPedido;
+
+    @Column(name = "HORAFIN")                        // nuevo en BD
+    private LocalDateTime horaFin;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IDESTADOPEDIDO", referencedColumnName = "IDESTADOPEDIDO", nullable = false)

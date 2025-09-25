@@ -24,6 +24,9 @@ public class PedidoDTO {
     @NotNull
     private LocalDateTime FPedido;
 
+    // NUEVO: mapea HORA_FIN (nullable)
+    private LocalDateTime HoraFin;
+
     @NotNull
     private Long IdEstadoPedido;
 

@@ -15,14 +15,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.orm.jpa.EntityManagerFactoryUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,76 +28,112 @@ public class PlatilloService {
     private PlatilloRepository repo;
 
     @PersistenceContext
-    EntityManager entityManager;
+    private EntityManager entityManager;
 
-    public Page<PlatilloDTO> getAllPlatillos(int page, int size){
+    // ===================== READ =====================
+    public Page<PlatilloDTO> getAllPlatillos(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<PlatilloEntity> platillos = repo.findAll(pageable);
         return platillos.map(this::convertirAPlatillosDTO);
     }
 
-    public PlatilloDTO createPlatillo(@Valid PlatilloDTO platilloDTO){
-        if (platilloDTO == null){
-            throw new IllegalArgumentException("El nombre del platillo no puede ser nulo");
+    // ===================== CREATE =====================
+    public PlatilloDTO createPlatillo(@Valid PlatilloDTO platilloDTO) {
+        if (platilloDTO == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El platillo no puede ser nulo");
         }
-        try{
-            PlatilloEntity platilloEntity = convertirAPlatillosEntity(platilloDTO);
-            PlatilloEntity platilloGuardado = repo.save(platilloEntity);
-            return convertirAPlatillosDTO(platilloGuardado);
-        }catch (Exception e){
-            log.error("Error al registrar platillo: " + e.getMessage());
-            throw new ExceptionDatoNoEncontrado("Error al registrar el platillo" + e.getMessage());
+        if (platilloDTO.getIdCate() == null) {
+            // En BD: IdCategoria es NOT NULL
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La categoría (IdCate) es requerida");
+        }
+        try {
+            PlatilloEntity entity = convertirAPlatillosEntity(platilloDTO);
+            PlatilloEntity guardado = repo.save(entity);
+            return convertirAPlatillosDTO(guardado);
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error al registrar platillo: {}", e.getMessage(), e);
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error al registrar el platillo: " + e.getMessage(), e
+            );
         }
     }
 
-    public PlatilloDTO updatePlatillo(Long id, @Valid PlatilloDTO platillo){
-        PlatilloEntity platilloExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Platillo no encontrado"));
+    // ===================== UPDATE =====================
+    public PlatilloDTO updatePlatillo(Long id, @Valid PlatilloDTO platillo) {
+        PlatilloEntity existente = repo.findById(id)
+                .orElseThrow(() -> new ExceptionDatoNoEncontrado("Platillo no encontrado"));
 
-        platilloExistente.setNomPlatillo(platillo.getNomPlatillo());
-        platilloExistente.setDescripcion(platillo.getDescripcion());
-        platilloExistente.setPrecio(platillo.getPrecio());
-        if (platillo.getIdCate() == null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"No se pudo cargar la categoria");
+        // Campos simples (update parcial)
+        if (platillo.getNomPlatillo() != null) existente.setNomPlatillo(platillo.getNomPlatillo());
+        if (platillo.getDescripcion() != null) existente.setDescripcion(platillo.getDescripcion());
+
+        // Precio: si te interesa permitir null (no enviar), puedes envolverlo con una comprobación adicional
+        existente.setPrecio(platillo.getPrecio());
+
+        // Imagen (Cloudinary)
+        if (platillo.getImagenUrl() != null) existente.setImagenUrl(platillo.getImagenUrl());
+        if (platillo.getPublicId() != null)   existente.setPublicId(platillo.getPublicId());
+
+        // Categoría (si viene, se cambia; si no, se mantiene)
+        if (platillo.getIdCate() != null) {
+            CategoriaEntity categoria = entityManager.getReference(CategoriaEntity.class, platillo.getIdCate());
+            existente.setCategoria(categoria);
         }
-        CategoriaEntity categoria = entityManager.getReference(CategoriaEntity.class,platillo.getIdCate());
 
-        PlatilloEntity platilloActualizado = repo.save(platilloExistente);
-        return convertirAPlatillosDTO(platilloActualizado);
+        PlatilloEntity actualizado = repo.save(existente);
+        return convertirAPlatillosDTO(actualizado);
     }
 
-    public boolean deletePlatillo(Long id){
-        try{
-            PlatilloEntity objPlatillo = repo.findById(id).orElse(null);
-            if (objPlatillo != null){
+    // ===================== DELETE =====================
+    public boolean deletePlatillo(Long id) {
+        try {
+            PlatilloEntity obj = repo.findById(id).orElse(null);
+            if (obj != null) {
                 repo.deleteById(id);
                 return true;
-            }else{
-                System.out.println("Usuario no encontrado");
-                return false;
             }
-        }catch (EmptyResultDataAccessException e){
-            throw new EmptyResultDataAccessException("No se encontro platillo con ID:" + id + " para eliminar.", 1);
+            return false;
+        } catch (EmptyResultDataAccessException e) {
+            // Compatibilidad con comportamiento del código 2
+            log.warn("No se encontró platillo con ID {} para eliminar.", id);
+            return false;
+        } catch (Exception e) {
+            log.error("Error al eliminar platillo {}: {}", id, e.getMessage(), e);
+            throw e;
         }
     }
 
+    // ===================== MAPEOS =====================
+    public PlatilloEntity convertirAPlatillosEntity(PlatilloDTO dto) {
+        PlatilloEntity e = new PlatilloEntity();
+        e.setId(dto.getId());
+        e.setNomPlatillo(dto.getNomPlatillo());
+        e.setDescripcion(dto.getDescripcion());
+        e.setPrecio(dto.getPrecio());
+        e.setImagenUrl(dto.getImagenUrl());
+        e.setPublicId(dto.getPublicId());
 
-    public PlatilloEntity convertirAPlatillosEntity(PlatilloDTO platillo){
-        PlatilloEntity dto = new PlatilloEntity();
-        dto.setId(platillo.getId());
-        dto.setNomPlatillo(platillo.getNomPlatillo());
-        dto.setDescripcion(platillo.getDescripcion());
-        dto.setPrecio(platillo.getPrecio());
-        dto.setCategoria(entityManager.getReference(CategoriaEntity.class, platillo.getIdCate()));
-        return dto;
+        // Requerido en CREATE (IdCate no debe ser null); en UPDATE lo maneja el método
+        if (dto.getIdCate() != null) {
+            e.setCategoria(entityManager.getReference(CategoriaEntity.class, dto.getIdCate()));
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La categoría (IdCate) es requerida");
+        }
+        return e;
     }
 
-    public PlatilloDTO convertirAPlatillosDTO(PlatilloEntity platillo){
-        PlatilloDTO dto = new PlatilloDTO();
-        dto.setId(platillo.getId());
-        dto.setNomPlatillo(platillo.getNomPlatillo());
-        dto.setDescripcion(platillo.getDescripcion());
-        dto.setPrecio(platillo.getPrecio());
-        dto.setIdCate(platillo.getCategoria().getId());
-        return dto;
+    public PlatilloDTO convertirAPlatillosDTO(PlatilloEntity e) {
+        PlatilloDTO d = new PlatilloDTO();
+        d.setId(e.getId());
+        d.setNomPlatillo(e.getNomPlatillo());
+        d.setDescripcion(e.getDescripcion());
+        d.setPrecio(e.getPrecio());
+        d.setImagenUrl(e.getImagenUrl());
+        d.setPublicId(e.getPublicId());
+        d.setIdCate(e.getCategoria() != null ? e.getCategoria().getId() : null);
+        return d;
     }
 }
