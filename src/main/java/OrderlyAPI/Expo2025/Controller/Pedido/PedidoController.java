@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -26,45 +27,37 @@ public class PedidoController {
     private PedidoService service;
 
     @GetMapping("/getDataPedido")
-    public ResponseEntity<?> getData(
+    public ResponseEntity<Page<PedidoDTO>> getData(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ){
         if (size <= 0 || size > 50){
-            return ResponseEntity.badRequest().body(Map.of(
-                    "status", "BAD_REQUEST",
-                    "message", "El tamaño de la página debe estar entre 1 y 50"
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "El tamaño de la pagina debe estar entre 1 y 50"
+            ));
+            return ResponseEntity.ok(null);
+        }
+        Page<PedidoDTO> datos = service.getAllPedidos(page, size);
+        if (datos == null){
+            ResponseEntity.badRequest().body(Map.of(
+                    "status", "No hay pedidos registrados"
             ));
         }
-
-        Page<PedidoDTO> datos = service.getDataPedido(page, size);
         return ResponseEntity.ok(datos);
     }
-
-    // === obtener pedido por ID ===
-    @GetMapping("/getPedidoById/{id}")
-    public ResponseEntity<?> getPedidoById(@PathVariable Long id) {
-        try {
-            PedidoDTO dto = service.getById(id);
-            return ResponseEntity.ok(dto);
-        } catch (ExceptionDatoNoEncontrado e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("status", "Not Found", "message", "Pedido no encontrado"));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("status","Error","message","Error al obtener el pedido","detail",e.getMessage()));
-        }
-    }
-
     @PostMapping("/createPedido")
     public ResponseEntity<Map<String, Object>> crear(@Valid @RequestBody PedidoDTO pedido,
-                                                     BindingResult bindingResult,
+                                                     BindingResult bindingResult, // ← Agrega esto
                                                      HttpServletRequest request){
 
+        // Verifica errores de validación
         if (bindingResult.hasErrors()) {
             Map<String, String> errores = new HashMap<>();
             bindingResult.getFieldErrors().forEach(error ->
                     errores.put(error.getField(), error.getDefaultMessage()));
+
+            System.out.println("Errores de validación: " + errores);
+
             return ResponseEntity.badRequest().body(Map.of(
                     "status", "VALIDATION_ERROR",
                     "errors", errores,
@@ -73,11 +66,14 @@ public class PedidoController {
         }
 
         try{
+            System.out.println("DTO recibido: " + pedido.toString());
             PedidoDTO respuesta = service.createPedido(pedido);
+
             if (respuesta == null){
                 return ResponseEntity.badRequest().body(Map.of(
-                        "status", "SERVICE_ERROR",
-                        "message", "No se pudo registrar el pedido"
+                        "status", "Inserción incorrecta",
+                        "errorType", "SERVICE_ERROR",
+                        "message", "Error en el servicio"
                 ));
             }
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
@@ -108,22 +104,17 @@ public class PedidoController {
         }
 
         try{
-            PedidoDTO pedidoActualizado = service.modificarPedido(id, pedido); // <-- nombre real del service
+            PedidoDTO pedidoActualizado = service.updatePedido(id, pedido);
             return ResponseEntity.ok(pedidoActualizado);
         }
+
         catch (ExceptionDatoNoEncontrado e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    Map.of("error", "Not found", "message", "Pedido no encontrado")
-            );
+            return ResponseEntity.notFound().build();
         }
+
         catch (ExceptionDatosDuplicados e){
             return ResponseEntity.status(HttpStatus.CONFLICT).body(
                     Map.of("error", "Datos duplicados", "campo", e.getCampoDuplicado())
-            );
-        }
-        catch (Exception e){
-            return ResponseEntity.internalServerError().body(
-                    Map.of("error", "Error", "message", e.getMessage())
             );
         }
     }
@@ -131,7 +122,7 @@ public class PedidoController {
     @DeleteMapping("/eliminarPedido/{id}")
     public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id){
         try{
-            if (!service.eliminarPedido(id)){ // <-- nombre real del service
+            if (!service.deletePedido(id)){
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .header("X-Mensaje-Error", "Pedido no encontrado")
                         .body(Map.of(
