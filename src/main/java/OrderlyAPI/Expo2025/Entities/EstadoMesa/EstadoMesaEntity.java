@@ -17,6 +17,7 @@ import java.util.List;
 @Table(name = "ESTADOMESA")
 @Getter @Setter @ToString @EqualsAndHashCode
 public class EstadoMesaEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "estado_Mesa_seq")
     @SequenceGenerator(name = "estado_Mesa_seq", sequenceName = "estado_Mesa_seq", allocationSize = 1)
