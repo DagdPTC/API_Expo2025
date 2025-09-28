@@ -4,81 +4,87 @@ import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.TipoDocumentoDTO;
 import OrderlyAPI.Expo2025.Repositories.TipoDocumento.TipoDocumentoRepository;
-import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.validation.Valid;
 
 @Slf4j
 @Service
-@CrossOrigin
+@RequiredArgsConstructor
+@Transactional
 public class TipoDocumentoService {
 
-    private TipoDocumentoRepository repo;
+    private final TipoDocumentoRepository repo;
 
-
-    public Page<TipoDocumentoDTO> getAllTipoDocument(int page, int size){
+    // ====== READ ======
+    @Transactional(readOnly = true)
+    public Page<TipoDocumentoDTO> getAllTipoDocument(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<TipoDocumentoEntity> tipdocument = repo.findAll(pageable);
-        return tipdocument.map(this::convertirATipDocumentDTO);
+        return repo.findAll(pageable).map(this::convertirATipDocumentDTO);
     }
 
-    public TipoDocumentoDTO createTipoDocument(@Valid TipoDocumentoDTO tipoDocumentoDTO){
-        if (tipoDocumentoDTO == null){
-            throw new IllegalArgumentException("El rol no puede ser nulo");
-        }
-        try{
-            TipoDocumentoEntity tipoDocumentoEntity = convertirATipDocumentEntity(tipoDocumentoDTO);
-            TipoDocumentoEntity tipdocumentGuardado = repo.save(tipoDocumentoEntity);
-            return convertirATipDocumentDTO(tipdocumentGuardado);
-        }catch (Exception e){
-            log.error("Error al registrar rol: " + e.getMessage());
-            throw new ExceptionDatoNoEncontrado("Error al registrar el rol" + e.getMessage());
-        }
+    // Lista NO paginada (ideal para combos del front)
+    @Transactional(readOnly = true)
+    public java.util.List<TipoDocumentoDTO> getAllTipoDocumentList() {
+        return repo.findAll()
+                .stream()
+                .map(this::convertirATipDocumentDTO)
+                .toList();
     }
 
-    public TipoDocumentoDTO updateTipoDocumento(Long id, @Valid TipoDocumentoDTO
-            rol){
-        TipoDocumentoEntity tipdocumentExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Tipo documento no encontrado"));
-
-        tipdocumentExistente.setTipoDoc(rol.getTipoDoc());
-
-        TipoDocumentoEntity tipdocumentActualizado = repo.save(tipdocumentExistente);
-        return convertirATipDocumentDTO(tipdocumentActualizado);
-    }
-
-    public boolean deleteTipoDocument(Long id){
-        try{
-            TipoDocumentoEntity objTipdocument = repo.findById(id).orElse(null);
-            if (objTipdocument != null){
-                repo.deleteById(id);
-                return true;
-            }else{
-                System.out.println("Rol no encontrado");
-                return false;
-            }
-        }catch (EmptyResultDataAccessException e){
-            throw new EmptyResultDataAccessException("No se encontro rol con ID:" + id + " para eliminar.", 1);
+    // ====== CREATE ======
+    public TipoDocumentoDTO createTipoDocument(@Valid TipoDocumentoDTO dto) {
+        if (dto == null) throw new IllegalArgumentException("El tipo de documento no puede ser nulo");
+        try {
+            TipoDocumentoEntity entity = convertirATipDocumentEntity(dto);
+            TipoDocumentoEntity guardado = repo.save(entity);
+            return convertirATipDocumentDTO(guardado);
+        } catch (Exception e) {
+            log.error("Error al registrar tipo documento: {}", e.getMessage(), e);
+            throw new ExceptionDatoNoEncontrado("Error al registrar el tipo de documento: " + e.getMessage());
         }
     }
 
+    // ====== UPDATE ======
+    public TipoDocumentoDTO updateTipoDocumento(Long id, @Valid TipoDocumentoDTO dto) {
+        TipoDocumentoEntity existente = repo.findById(id)
+                .orElseThrow(() -> new ExceptionDatoNoEncontrado("Tipo documento no encontrado"));
 
-    public TipoDocumentoEntity convertirATipDocumentEntity(TipoDocumentoDTO dto){
+        existente.setTipoDoc(dto.getTipoDoc());
+        TipoDocumentoEntity actualizado = repo.save(existente);
+        return convertirATipDocumentDTO(actualizado);
+    }
+
+    // ====== DELETE ======
+    public boolean deleteTipoDocument(Long id) {
+        try {
+            repo.deleteById(id);
+            return true;
+        } catch (EmptyResultDataAccessException e) {
+            throw new EmptyResultDataAccessException(
+                    "No se encontró TipoDocumento con ID: " + id + " para eliminar.", 1);
+        }
+    }
+
+    // ====== Mappers ======
+    public TipoDocumentoEntity convertirATipDocumentEntity(TipoDocumentoDTO dto) {
         TipoDocumentoEntity entity = new TipoDocumentoEntity();
         entity.setIdTipoDoc(dto.getIdTipoDoc());
         entity.setTipoDoc(dto.getTipoDoc());
         return entity;
     }
 
-    public TipoDocumentoDTO convertirATipDocumentDTO(TipoDocumentoEntity entity){
+    public TipoDocumentoDTO convertirATipDocumentDTO(TipoDocumentoEntity entity) {
         TipoDocumentoDTO dto = new TipoDocumentoDTO();
         dto.setIdTipoDoc(entity.getIdTipoDoc());
         dto.setTipoDoc(entity.getTipoDoc());
         return dto;
     }
 }
-

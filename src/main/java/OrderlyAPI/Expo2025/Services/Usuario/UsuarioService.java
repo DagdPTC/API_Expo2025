@@ -1,11 +1,11 @@
 package OrderlyAPI.Expo2025.Services.Usuario;
 
+import OrderlyAPI.Expo2025.Config.Argon2.Argon2Password;
 import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
-import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import OrderlyAPI.Expo2025.Entities.Usuario.UsuarioEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
-import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Models.DTO.UsuarioDTO;
+import OrderlyAPI.Expo2025.Repositories.Rol.RolRepository;
 import OrderlyAPI.Expo2025.Repositories.Usuario.UsuarioRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -19,9 +19,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 @Slf4j
 @CrossOrigin
@@ -29,6 +26,13 @@ public class UsuarioService {
 
     @Autowired
     private UsuarioRepository repo;
+
+    @Autowired
+    private RolRepository rolRepository;
+
+    // Usamos tu servicio Argon2 propio
+    @Autowired
+    private Argon2Password argon2;
 
     @PersistenceContext
     EntityManager entityManager;
@@ -39,61 +43,109 @@ public class UsuarioService {
         return usuarios.map(this::convertirAUsuariosDTO);
     }
 
-    public UsuarioDTO createUsuario( @Valid UsuarioDTO usuarioDTO){
+    public UsuarioDTO createUsuario(@Valid UsuarioDTO usuarioDTO) {
         if (usuarioDTO == null) {
             throw new IllegalArgumentException("El usuario no puede ser nulo");
         }
-        try{
-            UsuarioEntity usuarioEntity = convertirAUsuariosEntity(usuarioDTO);
-            UsuarioEntity usuarioGuardado = repo.save(usuarioEntity);
-            return convertirAUsuariosDTO(usuarioGuardado);
-        }catch (Exception e){
-            log.error("Error al registrar rol: " + e.getMessage());
-            throw new ExceptionDatoNoEncontrado("Error al registrar el usuario" + e.getMessage());
+        try {
+            UsuarioEntity usuarioEntity = new UsuarioEntity();
+
+            // ID opcional
+            if (usuarioDTO.getId() != null) {
+                usuarioEntity.setId(usuarioDTO.getId());
+            }
+
+            // Campos simples
+            usuarioEntity.setNombreusuario(usuarioDTO.getNombreusuario());
+            usuarioEntity.setCorreo(usuarioDTO.getCorreo());
+
+            // Hash Argon2 (usando tu servicio)
+            String hashed = argon2.EncryptPassword(usuarioDTO.getContrasenia());
+            usuarioEntity.setContrasenia(hashed);
+
+            // Rol (si viene)
+            if (usuarioDTO.getRolId() != null) {
+                RolEntity rol = rolRepository.findById(usuarioDTO.getRolId())
+                        .orElseThrow(() -> new ExceptionDatoNoEncontrado("Rol no encontrado"));
+                usuarioEntity.setRol(rol);
+            }
+
+            UsuarioEntity guardado = repo.save(usuarioEntity);
+            return convertirAUsuariosDTO(guardado);
+
+        } catch (Exception e) {
+            log.error("Error al registrar usuario: {}", e.getMessage(), e);
+            throw new ExceptionDatoNoEncontrado("Error al registrar el usuario " + e.getMessage());
         }
     }
 
-    public UsuarioDTO updateUsuario( @Valid Long id, UsuarioDTO usuario){
-        UsuarioEntity usuarioExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Usuario no encontrado"));
+    public UsuarioDTO updateUsuario(Long id, @Valid UsuarioDTO usuario) {
+        UsuarioEntity existente = repo.findById(id)
+                .orElseThrow(() -> new ExceptionDatoNoEncontrado("Usuario no encontrado"));
 
-        usuarioExistente.setContrasenia(usuario.getContrasenia());
-        usuarioExistente.setRol(usuarioExistente.getRol());
-        usuarioExistente.setCorreo(usuario.getCorreo());
+        // Actualiza si vienen
+        if (usuario.getNombreusuario() != null && !usuario.getNombreusuario().isBlank()) {
+            existente.setNombreusuario(usuario.getNombreusuario());
+        }
+        if (usuario.getCorreo() != null && !usuario.getCorreo().isBlank()) {
+            existente.setCorreo(usuario.getCorreo());
+        }
+        if (usuario.getContrasenia() != null && !usuario.getContrasenia().isBlank()) {
+            String hashed = argon2.EncryptPassword(usuario.getContrasenia());
+            existente.setContrasenia(hashed);
+        }
+        if (usuario.getRolId() != null) {
+            RolEntity rol = rolRepository.findById(usuario.getRolId())
+                    .orElseThrow(() -> new ExceptionDatoNoEncontrado("Rol no encontrado"));
+            existente.setRol(rol);
+        }
 
-        UsuarioEntity usuarioActualizado = repo.save(usuarioExistente);
-        return convertirAUsuariosDTO(usuarioActualizado);
+        UsuarioEntity actualizado = repo.save(existente);
+        return convertirAUsuariosDTO(actualizado);
     }
 
     public boolean deleteUsuario(Long id){
         try{
-            UsuarioEntity objUsuario = repo.findById(id).orElse(null);
-            if (objUsuario != null){
+            UsuarioEntity obj = repo.findById(id).orElse(null);
+            if (obj != null){
                 repo.deleteById(id);
                 return true;
-            }else{
-                System.out.println("Usuario no encontrado");
+            } else {
+                log.warn("Usuario no encontrado para eliminar. ID: {}", id);
                 return false;
             }
-        }catch (EmptyResultDataAccessException e){
-            throw new EmptyResultDataAccessException("No se encontro usuario con ID:" + id + " para eliminar.", 1);
+        } catch (EmptyResultDataAccessException e){
+            throw new EmptyResultDataAccessException(
+                    "No se encontró usuario con ID:" + id + " para eliminar.", 1);
         }
     }
 
-    public UsuarioDTO convertirAUsuariosDTO(UsuarioEntity usuario){
+    // === Mappers ===
+
+    private UsuarioDTO convertirAUsuariosDTO(UsuarioEntity usuario){
         UsuarioDTO dto = new UsuarioDTO();
         dto.setId(usuario.getId());
-        dto.setContrasenia(usuario.getContrasenia());
-        dto.setRolId(usuario.getRol().getId());
+        dto.setNombreusuario(usuario.getNombreusuario());
         dto.setCorreo(usuario.getCorreo());
+        // Por seguridad NO devolvemos la contraseña. (Si tu front lo exige, quítalo del DTO)
+        dto.setContrasenia(null);
+        if (usuario.getRol() != null) {
+            dto.setRolId(usuario.getRol().getId());
+        }
         return dto;
     }
 
+    // Si lo necesitas en otros servicios
     public UsuarioEntity convertirAUsuariosEntity(UsuarioDTO usuario){
-        UsuarioEntity dto = new UsuarioEntity();
-        dto.setId(usuario.getId());
-        dto.setContrasenia(usuario.getContrasenia());
-        dto.setRol(entityManager.getReference(RolEntity.class, usuario.getRolId()));
-        dto.setCorreo(usuario.getCorreo());
-        return dto;
+        UsuarioEntity e = new UsuarioEntity();
+        e.setId(usuario.getId());
+        e.setNombreusuario(usuario.getNombreusuario());
+        e.setCorreo(usuario.getCorreo());
+        // ¡OJO! Aquí NO encriptamos; deja que lo haga create/update para un solo punto de verdad.
+        e.setContrasenia(usuario.getContrasenia());
+        if (usuario.getRolId() != null) {
+            e.setRol(entityManager.getReference(RolEntity.class, usuario.getRolId()));
+        }
+        return e;
     }
 }

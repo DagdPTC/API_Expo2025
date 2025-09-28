@@ -20,6 +20,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,16 +58,33 @@ public class EmpleadoService {
         }
     }
 
-    public EmpleadoDTO updateEmpleado(Long id, @Valid EmpleadoDTO empleado){
-        EmpleadoEntity empleadoExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Empleado no encontrado"));
+    @Transactional
+    public EmpleadoDTO updateEmpleado(Long id, @Valid EmpleadoDTO dto) {
+        EmpleadoEntity e = repo.findById(id)
+                .orElseThrow(() -> new ExceptionDatoNoEncontrado("Empleado no encontrado"));
 
-        empleadoExistente.setPersona(empleadoExistente.getPersona());
-        empleadoExistente.setUsuario(empleadoExistente.getUsuario());
-        empleadoExistente.setFContratacion(empleado.getFContratacion());
+        // Actualiza relaciones solo si te las mandan
+        if (dto.getIdPersona() != null) {
+            e.setPersona(entityManager.getReference(PersonaEntity.class, dto.getIdPersona()));
+        }
+        if (dto.getIdUsuario() != null) {
+            e.setUsuario(entityManager.getReference(UsuarioEntity.class, dto.getIdUsuario()));
+        }
 
-        EmpleadoEntity empleadoActualizado = repo.save(empleadoExistente);
-        return convertirAEmpleadosDTO(empleadoActualizado);
+        // Fecha de contratación
+        if (dto.getHireDate() != null) {
+            // Si EmpleadoEntity usa LocalDateTime:
+            e.setFContratacion(dto.getHireDate());
+
+        /*  Si usa LocalDate:
+            e.setFContratacion(dto.getHireDate().toLocalDate());
+        */
+        }
+
+        EmpleadoEntity actualizado = repo.save(e);
+        return convertirAEmpleadosDTO(actualizado);
     }
+
 
     public boolean deleteEmpleado(Long id){
         try{
@@ -82,21 +102,74 @@ public class EmpleadoService {
     }
 
 
-    public EmpleadoEntity convertirAEmpleadosEntity(EmpleadoDTO empleado){
-        EmpleadoEntity dto = new EmpleadoEntity();
-        dto.setId(empleado.getId());
-        dto.setPersona(entityManager.getReference(PersonaEntity.class, empleado.getIdPersona()));
-        dto.setUsuario(entityManager.getReference(UsuarioEntity.class, empleado.getIdUsuario()));
-        dto.setFContratacion(empleado.getFContratacion());
+    public EmpleadoEntity convertirAEmpleadosEntity(EmpleadoDTO dto) {
+        EmpleadoEntity e = new EmpleadoEntity();
+
+        if (dto.getId() != null) {
+            e.setId(dto.getId());
+        }
+
+        // Persona (solo si viene el id)
+        if (dto.getIdPersona() != null) {
+            e.setPersona(entityManager.getReference(PersonaEntity.class, dto.getIdPersona()));
+        }
+
+        // Usuario (solo si viene el id)
+        if (dto.getIdUsuario() != null) {
+            e.setUsuario(entityManager.getReference(UsuarioEntity.class, dto.getIdUsuario()));
+        }
+
+        // Fecha de contratación
+        // DTO -> hireDate
+        if (dto.getHireDate() != null) {
+            // Si tu entidad usa LocalDateTime:
+            e.setFContratacion(dto.getHireDate());
+
+        /*  Si tu entidad usa LocalDate en lugar de LocalDateTime,
+            cambia la línea anterior por:
+            e.setFContratacion(dto.getHireDate().toLocalDate());
+        */
+        }
+
+        return e;
+    }
+
+
+    public EmpleadoDTO convertirAEmpleadosDTO(EmpleadoEntity e) {
+        EmpleadoDTO dto = new EmpleadoDTO();
+
+        dto.setId(e.getId());
+        dto.setIdPersona(e.getPersona().getId());
+        dto.setIdUsuario(e.getUsuario().getId());
+
+        // Persona
+        var p = e.getPersona();
+        dto.setFirstName(p.getPnombre());         // map a PrimerNombre
+        dto.setSecondName(p.getSnombre());        // SegundoNombre
+        dto.setLastNameP(p.getApellidoP());       // ApellidoPaterno
+        dto.setLastNameM(p.getApellidoM());       // ApellidoMaterno
+        dto.setBirthDate(p.getFechaN());          // DATE → LocalDate
+        dto.setAddress(p.getDireccion());
+
+        if (p.getDocumento() != null) {
+            dto.setDocNumber(p.getDocumento().getNumDoc()); // NumeroDocumento
+            if (p.getDocumento().getTipodocumento() != null) {
+                dto.setDocType(p.getDocumento().getTipodocumento().getTipoDoc()); // TipoDocumento
+            }
+        }
+
+        // Usuario / Rol
+        var u = e.getUsuario();
+        dto.setUsername(u.getNombreusuario());
+        dto.setEmail(u.getCorreo());
+        if (u.getRol() != null) {
+            dto.setRole(u.getRol().getRol());
+        }
+
+        // Empleado
+        dto.setHireDate(e.getFContratacion()); // DATE → LocalDateTime
+
         return dto;
     }
 
-    public EmpleadoDTO convertirAEmpleadosDTO(EmpleadoEntity empleado){
-        EmpleadoDTO dto = new EmpleadoDTO();
-        dto.setId(empleado.getId());
-        dto.setIdPersona(empleado.getPersona().getId());
-        dto.setIdUsuario(empleado.getUsuario().getId());
-        dto.setFContratacion(empleado.getFContratacion());
-        return dto;
-    }
 }

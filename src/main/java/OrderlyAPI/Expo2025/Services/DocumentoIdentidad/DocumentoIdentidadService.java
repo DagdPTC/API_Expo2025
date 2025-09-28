@@ -1,99 +1,108 @@
 package OrderlyAPI.Expo2025.Services.DocumentoIdentidad;
 
-import OrderlyAPI.Expo2025.Entities.Categoria.CategoriaEntity;
 import OrderlyAPI.Expo2025.Entities.DocumentoIdentidad.DocumentoIdentidadEntity;
-import OrderlyAPI.Expo2025.Entities.Rol.RolEntity;
 import OrderlyAPI.Expo2025.Entities.TipoDocumento.TipoDocumentoEntity;
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.DocumentoIdentidadDTO;
-import OrderlyAPI.Expo2025.Models.DTO.RolDTO;
 import OrderlyAPI.Expo2025.Repositories.DocumentoIdentidad.DocumentoIdentidadRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import OrderlyAPI.Expo2025.Repositories.TipoDocumento.TipoDocumentoRepository;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-@Service
 @Slf4j
+@Service
 @CrossOrigin
+@RequiredArgsConstructor
+@Transactional
 public class DocumentoIdentidadService {
 
-    @Autowired
-    private DocumentoIdentidadRepository repo;
+    private final DocumentoIdentidadRepository repo;
+    private final TipoDocumentoRepository tipoRepo;
 
-    @PersistenceContext
-    EntityManager entityManager;
-
-
-    public Page<DocumentoIdentidadDTO> getAllDocumentosIdentidades(int page, int size){
+    // ===== READ paginado (si lo usas en otra vista) =====
+    @Transactional(readOnly = true)
+    public Page<DocumentoIdentidadDTO> getAllDocumentosIdentidades(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<DocumentoIdentidadEntity> documentos = repo.findAll(pageable);
-        return documentos.map(this::convertirADocumentosIdentidadesDTO);
+        return repo.findAll(pageable).map(this::toDTO);
     }
 
-    public DocumentoIdentidadDTO createDocumentoIdentidad(@Valid DocumentoIdentidadDTO documentoIdentidadDTO){
-        if (documentoIdentidadDTO == null){
+    // ===== CREATE =====
+    public DocumentoIdentidadDTO createDocumentoIdentidad(@Valid DocumentoIdentidadDTO dtoIn) {
+        if (dtoIn == null) {
             throw new IllegalArgumentException("El Documento Identidad no puede ser nulo");
         }
-        try{
-            DocumentoIdentidadEntity documentoIdentidadEntity = convertirADocumentosIdentidadesEntity(documentoIdentidadDTO);
-            DocumentoIdentidadEntity documentoIdentidadGuardado = repo.save(documentoIdentidadEntity);
-            return convertirADocumentosIdentidadesDTO(documentoIdentidadGuardado);
-        }catch (Exception e){
-            log.error("Error al registrar documento identidad: " + e.getMessage());
-            throw new ExceptionDatoNoEncontrado("Error al registrar el documento identidad" + e.getMessage());
+        if (dtoIn.getIdtipoDoc() == null) {
+            throw new IllegalArgumentException("idtipoDoc es obligatorio");
+        }
+        if (dtoIn.getNumDoc() == null || dtoIn.getNumDoc().isBlank()) {
+            throw new IllegalArgumentException("numDoc no debe estar vacío");
+        }
+
+        try {
+            // Carga segura del TipoDocumento (NO usar getReference con id null)
+            TipoDocumentoEntity tipo = tipoRepo.findById(dtoIn.getIdtipoDoc())
+                    .orElseThrow(() -> new ExceptionDatoNoEncontrado("TipoDocumento no encontrado"));
+
+            DocumentoIdentidadEntity e = new DocumentoIdentidadEntity();
+            // Si tu entidad usa 'setId' para el PK y permites setearlo, mantenlo; si es autogenerado, quítalo.
+            if (dtoIn.getId() != null) e.setId(dtoIn.getId());
+            e.setNumDoc(dtoIn.getNumDoc());
+            e.setTipodocumento(tipo);
+
+            DocumentoIdentidadEntity saved = repo.save(e);
+            return toDTO(saved);
+
+        } catch (Exception ex) {
+            log.error("Error al registrar documento identidad: {}", ex.getMessage(), ex);
+            throw new ExceptionDatoNoEncontrado("Error al registrar el documento identidad: " + ex.getMessage());
         }
     }
 
-    public DocumentoIdentidadDTO updateDocumentoIdentidad(Long id, @Valid DocumentoIdentidadDTO documentoIdentidad){
-        DocumentoIdentidadEntity documentoIdentidadExistente = repo.findById(id).orElseThrow(() -> new ExceptionDatoNoEncontrado("Documento Identidad no encontrado"));
+    // ===== UPDATE =====
+    public DocumentoIdentidadDTO updateDocumentoIdentidad(Long id, @Valid DocumentoIdentidadDTO dtoIn) {
+        DocumentoIdentidadEntity existente = repo.findById(id)
+                .orElseThrow(() -> new ExceptionDatoNoEncontrado("Documento Identidad no encontrado"));
 
-        documentoIdentidadExistente.setTipodocumento(documentoIdentidadExistente.getTipodocumento());
-        documentoIdentidadExistente.setNumDoc(documentoIdentidad.getNumDoc());
+        // Actualiza tipo solo si viene un id válido
+        if (dtoIn.getIdtipoDoc() != null) {
+            TipoDocumentoEntity tipo = tipoRepo.findById(dtoIn.getIdtipoDoc())
+                    .orElseThrow(() -> new ExceptionDatoNoEncontrado("TipoDocumento no encontrado"));
+            existente.setTipodocumento(tipo);
+        }
 
-        DocumentoIdentidadEntity documentoIdentidadActualizado = repo.save(documentoIdentidadExistente);
-        return convertirADocumentosIdentidadesDTO(documentoIdentidadActualizado);
+        if (dtoIn.getNumDoc() != null && !dtoIn.getNumDoc().isBlank()) {
+            existente.setNumDoc(dtoIn.getNumDoc());
+        }
+
+        DocumentoIdentidadEntity actualizado = repo.save(existente);
+        return toDTO(actualizado);
     }
 
-    public boolean deleteDocumentoIdentidad(Long id){
-        try{
-            DocumentoIdentidadEntity objDocumentoIdentidad = repo.findById(id).orElse(null);
-            if (objDocumentoIdentidad != null){
-                repo.deleteById(id);
-                return true;
-            }else{
-                System.out.println("Documento Identidad no encontrado");
-                return false;
-            }
-        }catch (EmptyResultDataAccessException e){
-            throw new EmptyResultDataAccessException("No se encontro documento identidad con ID:" + id + " para eliminar.", 1);
+    // ===== DELETE =====
+    public boolean deleteDocumentoIdentidad(Long id) {
+        try {
+            repo.deleteById(id);
+            return true;
+        } catch (EmptyResultDataAccessException e) {
+            throw new EmptyResultDataAccessException(
+                    "No se encontro documento identidad con ID:" + id + " para eliminar.", 1);
         }
     }
 
-
-    public DocumentoIdentidadEntity convertirADocumentosIdentidadesEntity(DocumentoIdentidadDTO documentoIdentidad){
-        DocumentoIdentidadEntity dto = new DocumentoIdentidadEntity();
-        dto.setId(documentoIdentidad.getId());
-        dto.setTipodocumento(entityManager.getReference(TipoDocumentoEntity.class, documentoIdentidad.getIdtipoDoc()));
-        dto.setNumDoc(documentoIdentidad.getNumDoc());
-        return dto;
-    }
-
-    public DocumentoIdentidadDTO convertirADocumentosIdentidadesDTO(DocumentoIdentidadEntity documentoIdentidad){
+    // ===== Mappers (respetando tus nombres actuales: id, idtipoDoc, numDoc) =====
+    private DocumentoIdentidadDTO toDTO(DocumentoIdentidadEntity e) {
         DocumentoIdentidadDTO dto = new DocumentoIdentidadDTO();
-        dto.setId(documentoIdentidad.getId());
-        dto.setIdtipoDoc(documentoIdentidad.getTipodocumento().getIdTipoDoc());
-        dto.setNumDoc(documentoIdentidad.getNumDoc());
+        dto.setId(e.getId()); // si tu PK es IdDocumento y el getter es getIdDocumento, ajusta aquí
+        dto.setIdtipoDoc(e.getTipodocumento() != null ? e.getTipodocumento().getIdTipoDoc() : null);
+        dto.setNumDoc(e.getNumDoc());
         return dto;
     }
 }

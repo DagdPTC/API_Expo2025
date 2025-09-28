@@ -34,6 +34,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/test/admin-only").hasRole("Administrador")
                         .requestMatchers("/api/test/cliente-only").hasRole("Cliente")
+                        .requestMatchers(HttpMethod.POST,
+                                "/apiDocumentoIdentidad/createDocumentoIdentidad",
+                                "/apiPersona/createPersona",
+                                "/apiUsuario/createUsuario",
+                                "/apiEmpleado/createEmpleado"
+                        ).permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

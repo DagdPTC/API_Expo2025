@@ -29,7 +29,7 @@ public class UsuarioEntity {
     @Column(name = "NOMBREUSUARIO")
     private String nombreusuario;
 
-    @Column(name = "CONTRASENA", unique = true)
+    @Column(name = "CONTRASENA")
     private String contrasenia;
 
     @Column(name = "CORREO", unique = true)
