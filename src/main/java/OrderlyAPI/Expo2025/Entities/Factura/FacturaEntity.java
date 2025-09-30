@@ -1,6 +1,7 @@
 package OrderlyAPI.Expo2025.Entities.Factura;
 
 import OrderlyAPI.Expo2025.Entities.Empleado.EmpleadoEntity;
+import OrderlyAPI.Expo2025.Entities.EstadoFactura.EstadoFacturaEntity;
 import OrderlyAPI.Expo2025.Entities.HistorialPedido.HistorialPedidoEntity;
 import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
 import jakarta.persistence.*;
@@ -36,4 +37,9 @@ public class FacturaEntity {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IDPEDIDO", referencedColumnName = "IDPEDIDO")
     private PedidoEntity pedido;
+
+    // NUEVA RELACIÓN CON ESTADO FACTURA
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDESTADOFACTURA", referencedColumnName = "IDESTADOFACTURA")
+    private EstadoFacturaEntity estadoFactura;
 }
