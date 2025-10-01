@@ -97,6 +97,7 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         }
         String method = request.getMethod();
 
+        log.info("Evaluando ruta: {} | Método: {}", uri, method);
         // Preflight CORS
         if ("OPTIONS".equalsIgnoreCase(method)) return true;
 
@@ -105,7 +106,13 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         if ("/api/auth/logout".equals(uri) && "POST".equalsIgnoreCase(method)) return true;
         // Si en el futuro agregas /api/auth/register:
         // if ("/api/auth/register".equals(uri) && "POST".equalsIgnoreCase(method)) return true;
-
+        if (uri.startsWith("/apiReserva")) return true;
+        if (uri.startsWith("/apiTipoReserva")) return true;
+        if (uri.startsWith("/apiMesa")) return true;
+        if (uri.startsWith("/apiEmpleado")) return true;
+        if (uri.startsWith("/apiDocumentoIdentidad")) return true;
+        if (uri.startsWith("/apiPersona")) return true;
+        if (uri.startsWith("/apiUsuario")) return true;
         // /api/auth/me NO debe ser público
         return false;
     }

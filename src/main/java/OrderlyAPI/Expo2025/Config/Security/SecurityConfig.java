@@ -40,7 +40,9 @@ public class SecurityConfig {
                                 "/apiUsuario/createUsuario",
                                 "/apiEmpleado/createEmpleado"
                         ).permitAll()
-
+                        .requestMatchers("/apiReserva/**").permitAll()
+                        .requestMatchers("/apiTipoReserva/**").permitAll()
+                        .requestMatchers("/apiMesa/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
