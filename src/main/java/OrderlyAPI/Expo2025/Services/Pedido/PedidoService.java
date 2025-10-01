@@ -77,10 +77,9 @@ public class PedidoService {
         Long idNuevo = jdbcTemplate.queryForObject("SELECT PEDIDO_SEQ.NEXTVAL FROM DUAL", Long.class);
 
         String insert =
-                "INSERT INTO PEDIDO " +
-                        "(IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, IDESTADOPEDIDO, " +
-                        " OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO) " +
-                        "VALUES (?, ?, ?, ?, SYSDATE, ?, ?, ?, ?, ?)";
+                "INSERT INTO PEDIDO (IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO," +
+                        "                    HORAINICIO, IDESTADOPEDIDO, OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO)\n" +
+                        "VALUES (?, ?, ?, ?, SYSDATE, SYSDATE, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(
                 insert,
