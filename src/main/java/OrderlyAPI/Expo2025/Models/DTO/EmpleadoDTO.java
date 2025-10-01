@@ -29,7 +29,8 @@ public class EmpleadoDTO {
     // Usuario/Rol
     @JsonProperty("username")   private String username;      // Usuario.NombreUsuario
     @JsonProperty("email")      private String email;         // Usuario.Correo
-    @JsonProperty("role")       private String role;          // Rol.Rol
+    @JsonProperty("role")       private String role;          // Rol.Rol (nombre legible)
+    @JsonProperty("rolId")      private Long rolId;           // <-- NUEVO: id de Rol para actualizar FK
 
     // Empleado
     @JsonProperty("hireDate")   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")

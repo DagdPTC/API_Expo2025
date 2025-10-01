@@ -28,6 +28,9 @@ public class EmpleadoController {
     @Autowired
     private EmpleadoService service;
 
+    @Autowired
+    private EmpleadoService empleadoService;
+
     @GetMapping("/getDataEmpleado")
     public ResponseEntity<Page<EmpleadoDTO>> getData(
             @RequestParam(defaultValue = "0") int page,
@@ -103,27 +106,30 @@ public class EmpleadoController {
     }
 
     @DeleteMapping("/eliminarEmpleado/{id}")
-    public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id){
-        try{
-            if (!service.deleteEmpleado(id)){
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .header("X-Mensaje-Error", "Empleado no encontrado")
-                        .body(Map.of(
-                                "error", "Not found",
-                                "mensaje", "El Empleado no ha sido encontrado",
-                                "timestamp", Instant.now().toString()
-                        ));
-            }
-            return ResponseEntity.ok().body(Map.of(
-                    "status", "Proceso completado",
-                    "message", "Empleado eliminado exitosamente"
+    public ResponseEntity<?> eliminarEmpleado(@PathVariable Long id) {
+        try {
+            empleadoService.deleteEmpleadoHard(id); // ✅ llamada de instancia
+            return ResponseEntity.ok(Map.of(
+                    "status", "ok",
+                    "message", "Empleado eliminado correctamente"
             ));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                    "status", "Error",
-                    "message", "Error al eliminar el Empleado",
-                    "detail", e.getMessage()
+        } catch (ExceptionDatoNoEncontrado ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "status", 404,
+                    "error", ex.getMessage()
+            ));
+        } catch (IllegalStateException ex) {
+            // Ej: tiene pedidos relacionados
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                    "status", 409,
+                    "error", ex.getMessage()
+            ));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", 500,
+                    "error", "No se pudo eliminar el empleado"
             ));
         }
     }
+
 }
