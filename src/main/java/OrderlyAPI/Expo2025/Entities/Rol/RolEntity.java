@@ -1,6 +1,5 @@
 package OrderlyAPI.Expo2025.Entities.Rol;
 
-import OrderlyAPI.Expo2025.Entities.Persona.PersonaEntity;
 import OrderlyAPI.Expo2025.Entities.Usuario.UsuarioEntity;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
