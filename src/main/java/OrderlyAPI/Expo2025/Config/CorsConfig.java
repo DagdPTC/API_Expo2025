@@ -22,7 +22,7 @@ public class CorsConfig {
                 "http://localhost:*",
                 "http://127.0.0.1",
                 "http://127.0.0.1:*",
-                "https://orderly-api-b53514e40ebd.herokuapp.com/"
+                "https://orderly-api-b53514e40ebd.herokuapp.com"
                 // Si sirves el front estático desde otro dominio, agrégalo aquí.
                 // Ej: "https://tu-frontend.com", "https://*.netlify.app"
         ));
