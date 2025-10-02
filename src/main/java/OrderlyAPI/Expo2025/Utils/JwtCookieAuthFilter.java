@@ -98,24 +98,30 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         String method = request.getMethod();
 
         log.info("Evaluando ruta: {} | Método: {}", uri, method);
+
         // Preflight CORS
         if ("OPTIONS".equalsIgnoreCase(method)) return true;
 
-        // Rutas realmente públicas:
+        // Rutas realmente públicas (login/logout)
         if ("/api/auth/login".equals(uri) && "POST".equalsIgnoreCase(method)) return true;
         if ("/api/auth/logout".equals(uri) && "POST".equalsIgnoreCase(method)) return true;
-        // Si en el futuro agregas /api/auth/register:
-        // if ("/api/auth/register".equals(uri) && "POST".equalsIgnoreCase(method)) return true;
-        if (uri.startsWith("/apiReserva")) return true;
-        if (uri.startsWith("/apiTipoReserva")) return true;
-        if (uri.startsWith("/apiMesa")) return true;
-        if (uri.startsWith("/apiEmpleado")) return true;
-        if (uri.startsWith("/apiDocumentoIdentidad")) return true;
-        if (uri.startsWith("/apiPersona")) return true;
-        if (uri.startsWith("/apiUsuario")) return true;
-        // /api/auth/me NO debe ser público
+
+        // Endpoints abiertos por GET para el dashboard sin login
+        if ("GET".equalsIgnoreCase(method)) {
+            if (uri.startsWith("/apiMesa"))          return true;
+            if (uri.startsWith("/apiReserva"))       return true;
+            if (uri.startsWith("/apiTipoReserva"))   return true;
+            if (uri.startsWith("/apiPedido"))        return true;
+            if (uri.startsWith("/apiEstadoMesa"))    return true;
+            if (uri.startsWith("/apiEstadoPedido"))  return true;
+            if (uri.startsWith("/apiEstadoReserva")) return true;
+            if (uri.startsWith("/apiPlatillo"))      return true;
+        }
+
+        // /api/auth/me NO es público
         return false;
     }
+
 
     private String extractTokenFromCookies(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
