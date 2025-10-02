@@ -28,22 +28,13 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // CORS debe ir primero
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // ⚠️ CRÍTICO: Permitir OPTIONS para todas las rutas (preflight requests)
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // Endpoints de autenticación
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
                         .requestMatchers("/api/auth/me").authenticated()
-
-                        // Endpoints por rol
                         .requestMatchers("/api/test/admin-only").hasRole("Administrador")
                         .requestMatchers("/api/test/cliente-only").hasRole("Cliente")
-
-                        // Registro público
                         .requestMatchers(HttpMethod.POST,
                                 "/apiDocumentoIdentidad/createDocumentoIdentidad",
                                 "/apiPersona/createPersona",
@@ -51,17 +42,17 @@ public class SecurityConfig {
                                 "/apiEmpleado/createEmpleado"
                         ).permitAll()
 
-                        // Endpoints públicos
+                        // ---------- PÚBLICOS ----------
                         .requestMatchers("/apiReserva/**").permitAll()
                         .requestMatchers("/apiTipoReserva/**").permitAll()
                         .requestMatchers("/apiMesa/**").permitAll()
-                        .requestMatchers("/apiPedido/**").permitAll()
-                        .requestMatchers("/apiEstadoMesa/**").permitAll()
+                        .requestMatchers("/apiPedido/**").permitAll()          // <-- NUEVO
+                        .requestMatchers("/apiEstadoMesa/**").permitAll()      // (si quieres ver labels)
                         .requestMatchers("/apiEstadoPedido/**").permitAll()
                         .requestMatchers("/apiEstadoReserva/**").permitAll()
                         .requestMatchers("/apiPlatillo/**").permitAll()
+                        // --------------------------------
 
-                        // Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -74,6 +65,7 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
 
     @Bean
     public ForwardedHeaderFilter forwardedHeaderFilter() {
