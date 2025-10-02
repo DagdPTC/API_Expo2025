@@ -31,15 +31,10 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
                         .requestMatchers("/api/auth/me").authenticated()
-
-                        // Tests por rol (si los usas)
                         .requestMatchers("/api/test/admin-only").hasRole("Administrador")
                         .requestMatchers("/api/test/cliente-only").hasRole("Cliente")
-
-                        // Create abiertos
                         .requestMatchers(HttpMethod.POST,
                                 "/apiDocumentoIdentidad/createDocumentoIdentidad",
                                 "/apiPersona/createPersona",
@@ -47,19 +42,17 @@ public class SecurityConfig {
                                 "/apiEmpleado/createEmpleado"
                         ).permitAll()
 
-                        // GET públicos (para “solo GET y ya” sin login)
-                        .requestMatchers(HttpMethod.GET,
-                                "/apiMesa/**",
-                                "/apiReserva/**",
-                                "/apiTipoReserva/**",
-                                "/apiPedido/**",
-                                "/apiEstadoMesa/**",
-                                "/apiEstadoPedido/**",
-                                "/apiEstadoReserva/**",
-                                "/apiPlatillo/**"
-                        ).permitAll()
+                        // ---------- PÚBLICOS ----------
+                        .requestMatchers("/apiReserva/**").permitAll()
+                        .requestMatchers("/apiTipoReserva/**").permitAll()
+                        .requestMatchers("/apiMesa/**").permitAll()
+                        .requestMatchers("/apiPedido/**").permitAll()          // <-- NUEVO
+                        .requestMatchers("/apiEstadoMesa/**").permitAll()      // (si quieres ver labels)
+                        .requestMatchers("/apiEstadoPedido/**").permitAll()
+                        .requestMatchers("/apiEstadoReserva/**").permitAll()
+                        .requestMatchers("/apiPlatillo/**").permitAll()
+                        // --------------------------------
 
-                        // El resto autenticado
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -67,7 +60,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {

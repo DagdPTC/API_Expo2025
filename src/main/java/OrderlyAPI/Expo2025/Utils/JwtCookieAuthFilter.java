@@ -88,39 +88,31 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         }
     }
 
-    /** Quita el context-path y evalúa si la ruta es pública. */
     private boolean isPublicEndpoint(HttpServletRequest request) {
-        String uri = request.getRequestURI();      // p.ej. /Expo2025/api/auth/login
-        String ctx = request.getContextPath();     // p.ej. /Expo2025 (o "")
+        String uri = request.getRequestURI();
+        String ctx = request.getContextPath();
         if (ctx != null && !ctx.isEmpty() && uri.startsWith(ctx)) {
-            uri = uri.substring(ctx.length());     // queda /api/auth/login
+            uri = uri.substring(ctx.length());
         }
         String method = request.getMethod();
-
-        log.info("Evaluando ruta: {} | Método: {}", uri, method);
-
-        // Preflight CORS
         if ("OPTIONS".equalsIgnoreCase(method)) return true;
-
-        // Rutas realmente públicas (login/logout)
         if ("/api/auth/login".equals(uri) && "POST".equalsIgnoreCase(method)) return true;
         if ("/api/auth/logout".equals(uri) && "POST".equalsIgnoreCase(method)) return true;
 
-        // Endpoints abiertos por GET para el dashboard sin login
-        if ("GET".equalsIgnoreCase(method)) {
-            if (uri.startsWith("/apiMesa"))          return true;
-            if (uri.startsWith("/apiReserva"))       return true;
-            if (uri.startsWith("/apiTipoReserva"))   return true;
-            if (uri.startsWith("/apiPedido"))        return true;
-            if (uri.startsWith("/apiEstadoMesa"))    return true;
-            if (uri.startsWith("/apiEstadoPedido"))  return true;
-            if (uri.startsWith("/apiEstadoReserva")) return true;
-            if (uri.startsWith("/apiPlatillo"))      return true;
-        }
+        // ---------- PÚBLICOS ----------
+        if (uri.startsWith("/apiReserva")) return true;
+        if (uri.startsWith("/apiTipoReserva")) return true;
+        if (uri.startsWith("/apiMesa")) return true;
+        if (uri.startsWith("/apiPedido")) return true;           // <-- NUEVO
+        if (uri.startsWith("/apiEstadoMesa")) return true;       // (labels)
+        if (uri.startsWith("/apiEstadoPedido")) return true;
+        if (uri.startsWith("/apiEstadoReserva")) return true;
+        if (uri.startsWith("/apiPlatillo")) return true;
+        // ------------------------------
 
-        // /api/auth/me NO es público
         return false;
     }
+
 
 
     private String extractTokenFromCookies(HttpServletRequest request) {
