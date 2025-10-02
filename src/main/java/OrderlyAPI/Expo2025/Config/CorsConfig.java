@@ -15,6 +15,10 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
+
+        // Permitir múltiples orígenes
+        configuration.addAllowedOrigin("https://orderly-api-b53514e40ebd.herokuapp.com");
+
         // Permitir múltiples orígenes
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:*",
