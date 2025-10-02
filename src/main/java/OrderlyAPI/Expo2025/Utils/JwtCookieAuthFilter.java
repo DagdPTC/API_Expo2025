@@ -55,7 +55,7 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
         try {
             // 2) Token desde cookie
-            String token = extractTokenFromCookies(request);
+            String token = extractToken(request);
             if (token == null || token.isBlank()) {
                 sendError(response, "Token no encontrado", HttpServletResponse.SC_UNAUTHORIZED);
                 return;
@@ -130,4 +130,19 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         response.setStatus(status);
         response.getWriter().write(String.format("{\"error\":\"%s\",\"status\":%d}", message, status));
     }
+
+    // NUEVO
+    private String extractToken(HttpServletRequest request) {
+        // 1) Cookie primero
+        String token = extractTokenFromCookies(request);
+        if (token != null && !token.isBlank()) return token;
+
+        // 2) Fallback: Authorization: Bearer <jwt>
+        String auth = request.getHeader("Authorization");
+        if (auth != null && auth.startsWith("Bearer ")) {
+            return auth.substring(7);
+        }
+        return null;
+    }
+
 }
