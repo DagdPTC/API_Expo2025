@@ -1,21 +1,16 @@
 package OrderlyAPI.Expo2025.Controller.Auth;
 
 import OrderlyAPI.Expo2025.Entities.Usuario.UsuarioEntity;
-import OrderlyAPI.Expo2025.Entities.Empleado.EmpleadoEntity;
 import OrderlyAPI.Expo2025.Repositories.Empleado.EmpleadoRepository;
 import OrderlyAPI.Expo2025.Services.Auth.AuthService;
 import OrderlyAPI.Expo2025.Utils.JWTUtils;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import java.time.Duration;
-
-
 import java.util.Map;
 import java.util.Optional;
 
@@ -34,7 +29,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body, HttpServletResponse response, HttpServletRequest request) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> body,
+                                   HttpServletRequest request,
+                                   HttpServletResponse response) {
         String correo = body.get("correo");
         String contrasenia = body.get("contrasenia");
         if (correo == null || contrasenia == null) {
@@ -44,11 +41,11 @@ public class AuthController {
         boolean ok = authService.login(correo, contrasenia);
         if (!ok) return ResponseEntity.status(401).body(Map.of("error", "Credenciales inválidas"));
 
-        var userOpt = authService.obtenerUsuario(correo);
+        Optional<UsuarioEntity> userOpt = authService.obtenerUsuario(correo);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(401).body(Map.of("error", "Usuario no encontrado"));
         }
-        var user = userOpt.get();
+        UsuarioEntity user = userOpt.get();
 
         String token = jwtUtils.create(
                 String.valueOf(user.getId()),
@@ -56,14 +53,17 @@ public class AuthController {
                 user.getRol().getRol()
         );
 
-        // IMPORTANTE: cookie cross-site para Heroku
+        // En Heroku (HTTPS) debe quedar true; con ForwardedHeaderFilter funciona.
+        boolean isSecure = true; // si prefieres: request.isSecure()
+
         ResponseCookie cookie = ResponseCookie.from("authToken", token)
                 .httpOnly(true)
-                .secure(true)              // Heroku es HTTPS → Secure obligatorio con SameSite=None
-                .sameSite("None")          // permite enviar cookie en requests cross-site (fetch)
+                .secure(isSecure)      // requerido para SameSite=None
+                .sameSite("None")      // requerido para cross-site
                 .path("/")
-                .maxAge(Duration.ofDays(1))// alínealo a tu expiración JWT si quieres
+                .maxAge(Duration.ofDays(1))
                 .build();
+
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.ok(Map.of(
@@ -74,15 +74,18 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response) {
-        ResponseCookie clear = ResponseCookie.from("authToken", "")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        boolean isSecure = true; // o request.isSecure()
+
+        ResponseCookie cookie = ResponseCookie.from("authToken", "")
                 .httpOnly(true)
-                .secure(true)
+                .secure(isSecure)
                 .sameSite("None")
                 .path("/")
                 .maxAge(0)
                 .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, clear.toString());
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(Map.of("status", "bye"));
     }
 
