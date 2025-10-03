@@ -2,56 +2,44 @@ package OrderlyAPI.Expo2025.Config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 public class CorsConfig {
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+
+    private CorsConfiguration buildConfig() {
         CorsConfiguration c = new CorsConfiguration();
 
-        // Orígenes permitidos - XAMPP corre en puerto 8080 por defecto
+        // Para desarrollo: permitir localhost (con y sin puerto) y 127.0.0.1
         c.setAllowedOriginPatterns(List.of(
                 "http://localhost",
                 "http://localhost:*",
-                "http://127.0.0.1:*",
-                "https://orderly-api-b53514e40ebd.herokuapp.com",
-                "null" // Para file:// si abres HTML directamente
+                "http://127.0.0.1",
+                "http://127.0.0.1:*"
+                // Si sirves el front estático desde otro dominio, agrégalo aquí.
+                // Ej: "https://tu-frontend.com", "https://*.netlify.app"
         ));
 
-        // Métodos HTTP permitidos
-        c.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
-        ));
+        c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        c.setAllowedHeaders(List.of("Content-Type","Authorization","X-Requested-With","Accept","Origin"));
+        c.setExposedHeaders(List.of("Set-Cookie"));
+        c.setAllowCredentials(true);       // Necesario para cookies
+        c.setMaxAge(3600L);                // cache preflight 1h
+        return c;
+    }
 
-        // Headers permitidos - AGREGA MÁS PARA COMPATIBILIDAD
-        c.setAllowedHeaders(List.of(
-                "Content-Type",
-                "Authorization",
-                "X-Requested-With",
-                "Accept",
-                "Origin",
-                "Access-Control-Request-Method",
-                "Access-Control-Request-Headers"
-        ));
-
-        // Headers expuestos (para que el cliente pueda leerlos)
-        c.setExposedHeaders(List.of(
-                "Access-Control-Allow-Origin",
-                "Access-Control-Allow-Credentials",
-                "Set-Cookie"
-        ));
-
-        c.setAllowCredentials(true); // Imprescindible para cookies
-        c.setMaxAge(3600L);           // Cachea preflights 1 hora
-
-        UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
-        s.registerCorsConfiguration("/**", c);
-        return s;
+    @Bean
+    public FilterRegistrationBean<CorsFilter> corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", buildConfig());
+        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE); // que corra antes que Spring Security
+        return bean;
     }
 }
