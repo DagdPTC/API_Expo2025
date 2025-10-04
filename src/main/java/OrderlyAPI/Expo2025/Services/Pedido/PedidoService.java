@@ -33,7 +33,7 @@ public class PedidoService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
         String sql =
-                "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, IDESTADOPEDIDO, " +
+                "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, HORAINICIO, HORAFIN, IDESTADOPEDIDO, " +
                         "       OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO " +
                         "FROM PEDIDO " +
                         "ORDER BY IDPEDIDO DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
@@ -56,7 +56,7 @@ public class PedidoService {
        ========================================================= */
     public PedidoDTO getById(Long id) {
         String sql =
-                "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, IDESTADOPEDIDO, " +
+                "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, HORAINICIO, HORAFIN, IDESTADOPEDIDO, " +
                         "       OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO " +
                         "FROM PEDIDO WHERE IDPEDIDO = ?";
         List<PedidoDTO> list = jdbcTemplate.query(sql, new Object[]{ id }, pedidoRowMapper());
@@ -168,6 +168,17 @@ public class PedidoService {
                 v = rs.getLong("IDMESA");         if (!rs.wasNull()) dto.setIdMesa(v);
                 v = rs.getLong("IDEMPLEADO");     if (!rs.wasNull()) dto.setIdEmpleado(v);
                 v = rs.getLong("IDESTADOPEDIDO"); if (!rs.wasNull()) dto.setIdEstadoPedido(v);
+
+                java.sql.Timestamp tIni = rs.getTimestamp("HORAINICIO");
+                java.sql.Timestamp tFp  = rs.getTimestamp("FECHAPEDIDO");
+                if (tIni != null) {
+                    dto.setFPedido(tIni.toLocalDateTime());
+                } else if (tFp != null) {
+                           dto.setFPedido(tFp.toLocalDateTime());
+                }
+
+                java.sql.Timestamp tFin = rs.getTimestamp("HORAFIN");
+                if (tFin != null) dto.setHoraFin(tFin.toLocalDateTime());
 
                 dto.setObservaciones(rs.getString("OBSERVACIONES"));
                 dto.setSubtotal(rs.getDouble("SUBTOTAL"));
