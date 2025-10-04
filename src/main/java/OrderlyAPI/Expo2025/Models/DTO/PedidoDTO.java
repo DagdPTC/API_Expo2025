@@ -1,7 +1,5 @@
 package OrderlyAPI.Expo2025.Models.DTO;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,11 +22,9 @@ public class PedidoDTO {
     private Long IdEmpleado;
 
     @NotNull
-    @JsonProperty("horaInicio")                    // nombre al serializar
-    @JsonAlias({"FPedido","fpedido","fechaPedido","horainicio"}) // nombres aceptados al recibir
     private LocalDateTime FPedido;
 
-    @JsonProperty("horaFin")
+    // NUEVO: mapea HORA_FIN (nullable)
     private LocalDateTime HoraFin;
 
     @NotNull
