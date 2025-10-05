@@ -101,16 +101,12 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     }
 
     private String extractToken(HttpServletRequest req) {
-        // JwtCookieAuthFilter.extractToken(...)
         if (req.getCookies() != null) {
             Optional<Cookie> c = Arrays.stream(req.getCookies())
-                    .filter(k -> "token".equals(k.getName())
-                            || "jwt".equals(k.getName())
-                            || "authToken".equals(k.getName())) // <--- agregar
+                    .filter(k -> "token".equals(k.getName()) || "jwt".equals(k.getName()) || "jwt-token".equals(k.getName()))
                     .findFirst();
             if (c.isPresent()) return c.get().getValue();
         }
-
         String h = req.getHeader("Authorization");
         if (h != null && h.startsWith("Bearer ")) return h.substring(7);
         return null;

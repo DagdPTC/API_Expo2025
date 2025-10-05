@@ -56,7 +56,7 @@ public class AuthController {
         // En Heroku (HTTPS) debe quedar true; con ForwardedHeaderFilter funciona.
         boolean isSecure = true; // si prefieres: request.isSecure()
 
-        ResponseCookie cookie = ResponseCookie.from("authToken", token)
+        ResponseCookie cookie = ResponseCookie.from("token", token)
                 .httpOnly(true)
                 .secure(isSecure)      // requerido para SameSite=None
                 .sameSite("None")      // requerido para cross-site
@@ -77,7 +77,7 @@ public class AuthController {
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         boolean isSecure = true; // o request.isSecure()
 
-        ResponseCookie cookie = ResponseCookie.from("authToken", "")
+        ResponseCookie cookie = ResponseCookie.from("token", "")
                 .httpOnly(true)
                 .secure(isSecure)
                 .sameSite("None")
@@ -90,7 +90,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> me(@CookieValue(name = "authToken", required = false) String token) {
+    public ResponseEntity<?> me(@CookieValue(name = "token", required = false) String token) {
         if (token == null || token.isBlank()) {
             return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
         }
