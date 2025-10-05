@@ -96,4 +96,38 @@ public class RecuperacionService {
         // 5) Marcar verificado
         recRepo.actualizarEstado(r.getIdRecuperacion(), "VERIFICADO");
     }
+
+    /* ======= Paso C: resetear contraseña ======= */
+    @Transactional
+    public void resetearContrasena(String correo, String nuevaContrasena) {
+        // 1) Usuario
+        UsuarioEntity u = usuarioRepo.findByCorreoIgnoreCase(correo)
+                .orElseThrow(() -> new IllegalArgumentException("Correo no existe"));
+
+        // 2) Último verificado (no debe haber sido usado)
+        List<RecuperacionEntity> verificados = recRepo.findVerificados(u.getId());
+        if (verificados.isEmpty()) {
+            throw new IllegalStateException("No hay verificación activa. Solicita un nuevo código.");
+        }
+
+        RecuperacionEntity r = verificados.get(0);
+
+        // 3) Validar que no haya expirado desde la verificación (15 min)
+        long minutosDesdeVerificacion = Duration.between(
+                r.getCreadoEn().toInstant(),
+                Instant.now()
+        ).toMinutes();
+
+        if (minutosDesdeVerificacion > 15) {
+            recRepo.actualizarEstado(r.getIdRecuperacion(), "EXPIRADO");
+            throw new IllegalStateException("El tiempo para resetear ha expirado. Solicita un nuevo código.");
+        }
+
+        // 4) Actualizar contraseña (SIN HASHEAR - tu sistema lo maneja diferente)
+        u.setContrasenia(nuevaContrasena);
+        usuarioRepo.save(u);
+
+        // 5) Marcar como usado
+        recRepo.actualizarEstado(r.getIdRecuperacion(), "USADO");
+    }
 }

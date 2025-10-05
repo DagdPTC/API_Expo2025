@@ -33,4 +33,20 @@ public class RecuperacionController {
         service.validarCodigo(correo, codigo);
         return ResponseEntity.ok(Map.of("ok", true));
     }
+
+    @PostMapping("/reset")
+    public ResponseEntity<?> reset(@RequestBody Map<String,String> body) {
+        String correo = body.getOrDefault("correo","").trim();
+        String nuevaContrasena = body.getOrDefault("nuevaContrasena","").trim();
+
+        if (correo.isEmpty() || nuevaContrasena.isEmpty())
+            return ResponseEntity.badRequest().body(Map.of("error","Datos incompletos"));
+
+        // Validación básica de contraseña
+        if (nuevaContrasena.length() < 8)
+            return ResponseEntity.badRequest().body(Map.of("error","La contraseña debe tener al menos 8 caracteres"));
+
+        service.resetearContrasena(correo, nuevaContrasena);
+        return ResponseEntity.ok(Map.of("ok", true, "message", "Contraseña actualizada exitosamente"));
+    }
 }

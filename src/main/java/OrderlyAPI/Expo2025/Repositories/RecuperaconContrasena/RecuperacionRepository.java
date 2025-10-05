@@ -30,4 +30,12 @@ public interface RecuperacionRepository extends JpaRepository<RecuperacionEntity
        AND CreadoEn > (SYSTIMESTAMP - INTERVAL '1' HOUR)
   """, nativeQuery = true)
     int countUltimaHora(@Param("uid") Long usuarioId);
+
+    @Query(value = """
+    SELECT * FROM RecuperacionContrasena r
+     WHERE r.UsuarioId = :uid
+       AND r.Estado = 'VERIFICADO'
+     ORDER BY r.CreadoEn DESC
+  """, nativeQuery = true)
+    List<RecuperacionEntity> findVerificados(@Param("uid") Long usuarioId);
 }
