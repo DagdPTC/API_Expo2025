@@ -32,26 +32,23 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // SecurityConfig.java  (fragmento)
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // raíz o endpoints “health” (opcional)
                         .requestMatchers(HttpMethod.GET, "/", "/actuator/health").permitAll()
 
-                        // ====== RUTAS PÚBLICAS DE AUTH/RECOVERY ======
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        // si también tienes estas:
+                        // Auth público necesario
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
+                        .requestMatchers("/auth/**").permitAll()  // recovery
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // tus tests con roles:
-                        .requestMatchers("/api/test/admin-only").hasRole("Administrador")
-                        .requestMatchers("/api/test/cliente-only").hasRole("Cliente")
+                        // /api/auth/me debe requerir auth
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
 
-                        // resto de tus rutas públicas:
+                        // resto de tus rutas públicas existentes
                         .requestMatchers("/apiReserva/**",
                                 "/apiTipoReserva/**",
                                 "/apiMesa/**",
@@ -65,12 +62,12 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
-                // Manejadores estándar (evita HTML/redirects en 401/403)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
                         .accessDeniedHandler((req, res, e) -> res.sendError(HttpServletResponse.SC_FORBIDDEN))
                 )
                 .addFilterBefore(jwtCookieAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
 
         return http.build();
     }
