@@ -15,53 +15,54 @@ import java.util.Date;
 public class JWTUtils {
 
     @Value("${security.jwt.secret}")
-    private String jwtSecreto;                  // 32+ caracteres por seguridad
+    private String jwtSecreto;
 
     @Value("${security.jwt.issuer}")
-    private String issuer;                      // Firma del token
+    private String issuer;
 
     @Value("${security.jwt.expiration}")
-    private long expiracionMs;                  // Tiempo de expiración
+    private long expiracionMs;
 
     private final Logger log = LoggerFactory.getLogger(JWTUtils.class);
 
     /**
-     * Obtiene la clave de firma de forma consistente
-     * IMPORTANTE: Este método asegura que siempre se use UTF-8
+     * CRÍTICO: Obtiene la clave de firma de forma consistente
+     * Sanitiza el secret para evitar problemas con espacios
      */
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecreto.getBytes(StandardCharsets.UTF_8));
+        // Sanitizar el secret: eliminar espacios y asegurar UTF-8
+        String cleanSecret = jwtSecreto.trim();
+
+        // Log solo en desarrollo (eliminar en producción)
+        log.debug("Secret length: {}", cleanSecret.length());
+
+        return Keys.hmacShaKeyFor(cleanSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
-     * Metodo para crear JWT
-     * @param correo - Email del usuario (será el subject)
-     * @param id - ID del usuario
-     * @param rol - Rol del usuario
-     * @return Token JWT
+     * Crea JWT con el correo como subject
      */
     public String create(String correo, String id, String rol) {
-        // Obtiene la fecha actual y calcula la fecha de expiración
         Date now = new Date();
         Date expiration = new Date(now.getTime() + expiracionMs);
 
-        // Construye el token con sus componentes
-        return Jwts.builder()
-                .setId(correo)                                          // ID único ahora es el correo
-                .setIssuedAt(now)                                       // Fecha de emisión
-                .setSubject(correo)                                     // Subject = correo (IMPORTANTE)
-                .claim("id", id)                                        // ID de usuario como claim
-                .claim("rol", rol)                                      // Rol del usuario
-                .setIssuer(issuer)                                      // Emisor del token
-                .setExpiration(expiracionMs >= 0 ? expiration : null)   // Expiración (si es >= 0)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)    // Firma con algoritmo HS256
-                .compact();                                             // Convierte a String compacto
+        String token = Jwts.builder()
+                .setId(correo)
+                .setIssuedAt(now)
+                .setSubject(correo)
+                .claim("id", id)
+                .claim("rol", rol)
+                .setIssuer(issuer)
+                .setExpiration(expiracionMs >= 0 ? expiration : null)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+
+        log.info("Token generado para usuario: {}", correo);
+        return token;
     }
 
     /**
      * Extrae el rol del token JWT
-     * @param token Token JWT
-     * @return Rol del usuario
      */
     public String extractRol(String token) {
         Claims claims = parseToken(token);
@@ -70,8 +71,6 @@ public class JWTUtils {
 
     /**
      * Obtiene el subject (correo) del JWT
-     * @param jwt Token JWT como String
-     * @return String con el subject del token
      */
     public String getValue(String jwt) {
         Claims claims = parseClaims(jwt);
@@ -80,8 +79,6 @@ public class JWTUtils {
 
     /**
      * Obtiene el ID del JWT
-     * @param jwt Token JWT
-     * @return ID del token
      */
     public String getKey(String jwt) {
         Claims claims = parseClaims(jwt);
@@ -90,10 +87,6 @@ public class JWTUtils {
 
     /**
      * Parsea y valida el token
-     * @param jwt Token JWT
-     * @return Claims del token
-     * @throws ExpiredJwtException Si el token expiró
-     * @throws MalformedJwtException Si el token está malformado
      */
     public Claims parseToken(String jwt) throws ExpiredJwtException, MalformedJwtException {
         return parseClaims(jwt);
@@ -101,33 +94,49 @@ public class JWTUtils {
 
     /**
      * Validación del token
-     * @param token Token a validar
-     * @return true si el token es válido, false en caso contrario
      */
     public boolean validate(String token) {
         try {
             parseClaims(token);
+            log.debug("Token validado exitosamente");
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            log.warn("Token inválido: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.warn("Token expirado: {}", e.getMessage());
+            return false;
+        } catch (MalformedJwtException e) {
+            log.warn("Token malformado: {}", e.getMessage());
+            return false;
+        } catch (JwtException e) {
+            log.error("Error validando token: {}", e.getMessage());
+            return false;
+        } catch (IllegalArgumentException e) {
+            log.warn("Token inválido o vacío");
             return false;
         }
     }
 
-    // ######################## METODOS COMPLEMENTARIOS ########################
-
     /**
-     * Metodo privado para parsear los claims de un JWT
-     * CORREGIDO: Ahora usa UTF-8 de forma consistente con create()
-     * @param jwt Token a parsear
-     * @return Claims del token
+     * CRÍTICO: Parsea claims usando la misma clave que create()
      */
     private Claims parseClaims(String jwt) {
-        // Configura el parser con la clave de firma y parsea el token
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())  // Usa el mismo método que create()
-                .build()
-                .parseClaimsJws(jwt)
-                .getBody();
+        try {
+            // Sanitizar el token (eliminar espacios)
+            String cleanToken = jwt.trim();
+
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())  // Misma clave que create()
+                    .build()
+                    .parseClaimsJws(cleanToken)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            log.warn("Token expirado para subject: {}", e.getClaims().getSubject());
+            throw e;
+        } catch (SignatureException e) {
+            log.error("Firma inválida - El secret puede no coincidir");
+            throw e;
+        } catch (Exception e) {
+            log.error("Error parseando token: {}", e.getMessage());
+            throw e;
+        }
     }
 }

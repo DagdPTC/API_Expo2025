@@ -35,19 +35,12 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     private String jwtIssuer;
 
     private static final List<String> PUBLIC_PATHS = List.of(
-            // Auth endpoints
             "/api/auth/login",
             "/api/auth/logout",
-
-            // ⭐ Recovery endpoints - EXPLÍCITOS
             "/auth/recovery/request",
             "/auth/recovery/verify",
             "/auth/recovery/reset",
-
-            // Cualquier otra ruta /auth/**
             "/auth/**",
-
-            // API públicos
             "/apiDocumentoIdentidad/**",
             "/apiPersona/**",
             "/apiUsuario/**",
@@ -61,20 +54,24 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             "/apiEstadoReserva/**",
             "/apiPlatillo/**",
             "/apiCategoria/**",
-
-            // Health check
             "/", "/actuator/health"
     );
 
     private final AntPathMatcher matcher = new AntPathMatcher();
+
+    /**
+     * CRÍTICO: Obtener la clave de firma con el mismo método que JWTUtils
+     */
+    private Key getSigningKey() {
+        String cleanSecret = jwtSecret.trim();
+        return Keys.hmacShaKeyFor(cleanSecret.getBytes(StandardCharsets.UTF_8));
+    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
 
         String uri = request.getRequestURI();
-
-        // DEBUG: Log explícito para ver qué está pasando
         boolean shouldSkip = PUBLIC_PATHS.stream().anyMatch(p -> matcher.match(p, uri));
 
         log.info("shouldNotFilter: URI={}, shouldSkip={}", uri, shouldSkip);
@@ -104,13 +101,14 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
         if (token == null || token.isBlank()) {
             log.warn("⚠ No se encontró token para: {} - Rechazando request", uri);
-            // IMPORTANTE: No continuar la cadena si no hay token en ruta protegida
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
             response.getWriter().write("{\"error\": \"Token requerido\"}");
             return;
         }
 
-        log.info("Token encontrado: {}...", token.substring(0, Math.min(20, token.length())));
+        log.info("Token encontrado (primeros 30 chars): {}...",
+                token.substring(0, Math.min(30, token.length())));
 
         try {
             Authentication auth = buildAuthenticationFromJwt(token, request);
@@ -120,12 +118,28 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
                         .setAuthentication(auth);
             } else {
                 log.error("✗ buildAuthenticationFromJwt retornó null");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\": \"Token inválido\"}");
+                return;
             }
             chain.doFilter(request, response);
 
+        } catch (io.jsonwebtoken.ExpiredJwtException ex) {
+            log.error("✗ Token expirado: {}", ex.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Token expirado\"}");
+        } catch (io.jsonwebtoken.security.SignatureException ex) {
+            log.error("✗ Firma del token no coincide - Posible problema con JWT_SECRET");
+            log.error("   Mensaje: {}", ex.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Token inválido\"}");
         } catch (Exception ex) {
             log.error("✗ Error parseando token: {}", ex.getMessage(), ex);
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
             response.getWriter().write("{\"error\": \"Token inválido\"}");
         }
     }
@@ -134,13 +148,15 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         // 1. Buscar en cookies
         if (req.getCookies() != null) {
             Optional<Cookie> c = Arrays.stream(req.getCookies())
-                    .filter(k -> "token".equals(k.getName()) || "jwt".equals(k.getName()) || "jwt-token".equals(k.getName()))
+                    .filter(k -> "token".equals(k.getName()) ||
+                            "jwt".equals(k.getName()) ||
+                            "jwt-token".equals(k.getName()))
                     .findFirst();
             if (c.isPresent()) {
                 String val = c.get().getValue();
                 if (val != null && !val.isBlank()) {
                     log.info("✓ Token encontrado en cookie");
-                    return val;
+                    return val.trim();  // Sanitizar
                 }
             }
         }
@@ -148,14 +164,15 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         // 2. Buscar en header Authorization
         String h = req.getHeader("Authorization");
         if (h != null) {
-            log.info("Authorization header presente: {}...", h.substring(0, Math.min(30, h.length())));
+            log.info("Authorization header presente: {}...",
+                    h.substring(0, Math.min(30, h.length())));
         }
 
         if (h != null && h.startsWith("Bearer ")) {
             String val = h.substring(7);
             if (!val.isBlank()) {
                 log.info("✓ Token encontrado en Authorization header");
-                return val;
+                return val.trim();  // Sanitizar
             }
         }
 
@@ -163,22 +180,37 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     }
 
     private Authentication buildAuthenticationFromJwt(String token, HttpServletRequest request) {
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        try {
+            var parser = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey());  // Usa el mismo método que create()
 
-        var parser = Jwts.parserBuilder().setSigningKey(key);
-        if (jwtIssuer != null && !jwtIssuer.isBlank()) parser.requireIssuer(jwtIssuer);
+            if (jwtIssuer != null && !jwtIssuer.isBlank()) {
+                parser.requireIssuer(jwtIssuer);
+            }
 
-        Claims claims = parser.build().parseClaimsJws(token).getBody();
+            Claims claims = parser.build()
+                    .parseClaimsJws(token)
+                    .getBody();
 
-        String subject = claims.getSubject();
-        if (subject == null || subject.isBlank()) return null;
+            String subject = claims.getSubject();
+            if (subject == null || subject.isBlank()) {
+                log.error("Token sin subject");
+                return null;
+            }
 
-        Collection<SimpleGrantedAuthority> auths = extractAuthorities(claims);
+            log.info("Token parseado - Subject: {}, Issuer: {}",
+                    subject, claims.getIssuer());
 
-        UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(subject, null, auths);
-        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        return auth;
+            Collection<SimpleGrantedAuthority> auths = extractAuthorities(claims);
+
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(subject, null, auths);
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            return auth;
+        } catch (Exception e) {
+            log.error("Error en buildAuthenticationFromJwt: {}", e.getMessage());
+            throw e;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -195,7 +227,10 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
         List<String> roles;
         if (rolesObj instanceof String s) {
-            roles = Arrays.stream(s.split(",")).map(String::trim).filter(r -> !r.isEmpty()).toList();
+            roles = Arrays.stream(s.split(","))
+                    .map(String::trim)
+                    .filter(r -> !r.isEmpty())
+                    .toList();
         } else if (rolesObj instanceof Collection<?> col) {
             roles = col.stream().map(String::valueOf).toList();
         } else {
