@@ -1,7 +1,7 @@
 package OrderlyAPI.Expo2025.Config.Security;
 
 import OrderlyAPI.Expo2025.Utils.JwtCookieAuthFilter;
-import jakarta.servlet.Filter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,7 +13,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.ForwardedHeaderFilter;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -28,47 +33,59 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // IMPORTANTE: CORS debe ir PRIMERO
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Auth endpoints públicos
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CRÍTICO: Permite preflight
+                        // raíz o endpoints “health” (opcional)
+                        .requestMatchers(HttpMethod.GET, "/", "/actuator/health").permitAll()
 
-                        // Test endpoints
+                        // ====== RUTAS PÚBLICAS DE AUTH/RECOVERY ======
+                        .requestMatchers("/auth/**").permitAll()
+                        // si también tienes estas:
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // tus tests con roles:
                         .requestMatchers("/api/test/admin-only").hasRole("Administrador")
                         .requestMatchers("/api/test/cliente-only").hasRole("Cliente")
 
-                        // Registro público
-                        .requestMatchers(HttpMethod.POST,
-                                "/apiDocumentoIdentidad/createDocumentoIdentidad",
-                                "/apiPersona/createPersona",
-                                "/apiUsuario/createUsuario",
-                                "/apiEmpleado/createEmpleado"
-                        ).permitAll()
-
-                        .requestMatchers("/auth/recovery/**").permitAll()
-
-                        // APIs públicas
-                        .requestMatchers("/apiReserva/**").permitAll()
-                        .requestMatchers("/apiTipoReserva/**").permitAll()
-                        .requestMatchers("/apiMesa/**").permitAll()
-                        .requestMatchers("/apiPedido/**").permitAll()
-                        .requestMatchers("/apiEstadoMesa/**").permitAll()
-                        .requestMatchers("/apiEstadoPedido/**").permitAll()
-                        .requestMatchers("/apiEstadoReserva/**").permitAll()
-                        .requestMatchers("/apiPlatillo/**").permitAll()
-                        .requestMatchers("/apiCategoria/**").permitAll()
-                        .requestMatchers("/apiEmpleado/**").permitAll()
+                        // resto de tus rutas públicas:
+                        .requestMatchers("/apiReserva/**",
+                                "/apiTipoReserva/**",
+                                "/apiMesa/**",
+                                "/apiPedido/**",
+                                "/apiEstadoMesa/**",
+                                "/apiEstadoPedido/**",
+                                "/apiEstadoReserva/**",
+                                "/apiPlatillo/**",
+                                "/apiCategoria/**",
+                                "/apiEmpleado/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore((Filter) jwtCookieAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                // Manejadores estándar (evita HTML/redirects en 401/403)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+                        .accessDeniedHandler((req, res, e) -> res.sendError(HttpServletResponse.SC_FORBIDDEN))
+                )
+                .addFilterBefore(jwtCookieAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // CORS básico (útil si luego pegas desde el front)
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOrigins(List.of("*")); // ajusta a tu dominio si quieres
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return source;
     }
 
     @Bean
