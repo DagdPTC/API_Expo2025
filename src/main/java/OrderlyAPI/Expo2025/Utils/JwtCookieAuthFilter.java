@@ -37,7 +37,7 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     private static final List<String> PUBLIC_PATHS = List.of(
             "/api/auth/login",
             "/api/auth/logout",
-            "/auth/**",
+            "/auth/**",  // CRÍTICO: Incluye /auth/recovery/**
             "/apiDocumentoIdentidad/**",
             "/apiPersona/**",
             "/apiUsuario/**",
@@ -59,8 +59,21 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
+
         String uri = request.getRequestURI();
-        return PUBLIC_PATHS.stream().anyMatch(p -> matcher.match(p, uri));
+
+        // DEBUG: Log explícito para ver qué está pasando
+        boolean shouldSkip = PUBLIC_PATHS.stream().anyMatch(p -> matcher.match(p, uri));
+
+        log.info("shouldNotFilter: URI={}, shouldSkip={}", uri, shouldSkip);
+
+        if (shouldSkip) {
+            log.info("✓ Path {} coincide con rutas públicas - OMITIENDO filtro JWT", uri);
+        } else {
+            log.warn("✗ Path {} NO coincide - REQUIERE autenticación", uri);
+        }
+
+        return shouldSkip;
     }
 
     @Override
@@ -73,13 +86,15 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         String method = request.getMethod();
 
-        log.info("JwtCookieAuthFilter: {} {}", method, uri);
+        log.info("JwtCookieAuthFilter.doFilterInternal: {} {}", method, uri);
 
         String token = extractToken(request);
 
         if (token == null || token.isBlank()) {
-            log.warn("No se encontro token para: {}", uri);
-            chain.doFilter(request, response);
+            log.warn("⚠ No se encontró token para: {} - Rechazando request", uri);
+            // IMPORTANTE: No continuar la cadena si no hay token en ruta protegida
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\": \"Token requerido\"}");
             return;
         }
 
@@ -88,21 +103,23 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         try {
             Authentication auth = buildAuthenticationFromJwt(token, request);
             if (auth != null) {
-                log.info("Autenticacion exitosa: {}", auth.getName());
+                log.info("✓ Autenticación exitosa: {}", auth.getName());
                 org.springframework.security.core.context.SecurityContextHolder.getContext()
                         .setAuthentication(auth);
             } else {
-                log.error("buildAuthenticationFromJwt retorno null");
+                log.error("✗ buildAuthenticationFromJwt retornó null");
             }
             chain.doFilter(request, response);
 
         } catch (Exception ex) {
-            log.error("Error parseando token: {}", ex.getMessage(), ex);
-            chain.doFilter(request, response);
+            log.error("✗ Error parseando token: {}", ex.getMessage(), ex);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\": \"Token inválido\"}");
         }
     }
 
     private String extractToken(HttpServletRequest req) {
+        // 1. Buscar en cookies
         if (req.getCookies() != null) {
             Optional<Cookie> c = Arrays.stream(req.getCookies())
                     .filter(k -> "token".equals(k.getName()) || "jwt".equals(k.getName()) || "jwt-token".equals(k.getName()))
@@ -110,19 +127,22 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             if (c.isPresent()) {
                 String val = c.get().getValue();
                 if (val != null && !val.isBlank()) {
-                    log.info("Token de cookie");
+                    log.info("✓ Token encontrado en cookie");
                     return val;
                 }
             }
         }
 
+        // 2. Buscar en header Authorization
         String h = req.getHeader("Authorization");
-        log.info("Authorization header: {}", (h != null ? h.substring(0, Math.min(30, h.length())) + "..." : "null"));
+        if (h != null) {
+            log.info("Authorization header presente: {}...", h.substring(0, Math.min(30, h.length())));
+        }
 
         if (h != null && h.startsWith("Bearer ")) {
             String val = h.substring(7);
             if (!val.isBlank()) {
-                log.info("Token de Authorization header");
+                log.info("✓ Token encontrado en Authorization header");
                 return val;
             }
         }
@@ -151,10 +171,9 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
     @SuppressWarnings("unchecked")
     private Collection<SimpleGrantedAuthority> extractAuthorities(Claims claims) {
-        // CORREGIDO: Busca tanto "roles" (plural) como "rol" (singular)
         Object rolesObj = claims.get("roles");
         if (rolesObj == null) {
-            rolesObj = claims.get("rol");  // <-- ESTA ES LA LÍNEA CRÍTICA
+            rolesObj = claims.get("rol");
         }
 
         if (rolesObj == null) {
