@@ -28,56 +28,43 @@ public class AuthController {
         this.empleadoRepository = empleadoRepository;
     }
 
+    // LOGIN
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body,
                                    HttpServletRequest request,
                                    HttpServletResponse response) {
+
         String correo = body.get("correo");
         String contrasenia = body.get("contrasenia");
         if (correo == null || contrasenia == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Faltan campos"));
         }
 
-        boolean ok = authService.login(correo, contrasenia);
-        if (!ok) return ResponseEntity.status(401).body(Map.of("error", "Credenciales inválidas"));
-
-        Optional<UsuarioEntity> userOpt = authService.obtenerUsuario(correo);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body(Map.of("error", "Usuario no encontrado"));
+        if (!authService.login(correo, contrasenia)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Credenciales inválidas"));
         }
-        UsuarioEntity user = userOpt.get();
 
-        // subject = correo
+        UsuarioEntity user = authService.obtenerUsuario(correo)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // IMPORTANTÍSIMO: subject = correo
         String token = jwtUtils.create(
-                user.getCorreo(),              // sub
-                String.valueOf(user.getId()),  // otro claim (si lo usas)
+                user.getCorreo(),                  // sub = correo
+                String.valueOf(user.getId()),      // si lo usas como claim extra
                 user.getRol().getRol()
         );
 
+        // UN SOLO Set-Cookie, con CHIPS (Partitioned)
         String setCookie = ResponseCookie.from("token", token)
                 .httpOnly(true)
-                .secure(true)        // en Heroku es HTTPS
-                .sameSite("None")    // cross-site
+                .secure(true)          // Heroku es HTTPS
+                .sameSite("None")      // cross-site
                 .path("/")
                 .maxAge(Duration.ofDays(1))
                 .build()
-                .toString() + "; Partitioned";   // <-- CHIPS
+                .toString() + "; Partitioned";   // <-- clave
 
         response.addHeader(HttpHeaders.SET_COOKIE, setCookie);
-
-
-        // En Heroku (HTTPS) debe quedar true; con ForwardedHeaderFilter funciona.
-        boolean isSecure = true; // si prefieres: request.isSecure()
-
-        ResponseCookie cookie = ResponseCookie.from("token", token)
-                .httpOnly(true)
-                .secure(isSecure)      // requerido para SameSite=None
-                .sameSite("None")      // requerido para cross-site
-                .path("/")
-                .maxAge(Duration.ofDays(1))
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.ok(Map.of(
                 "status", "ok",
@@ -86,10 +73,10 @@ public class AuthController {
         ));
     }
 
+
+    // LOGOUT
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        boolean isSecure = true; // o request.isSecure()
-
         String delCookie = ResponseCookie.from("token", "")
                 .httpOnly(true)
                 .secure(true)
@@ -100,20 +87,9 @@ public class AuthController {
                 .toString() + "; Partitioned";
 
         response.addHeader(HttpHeaders.SET_COOKIE, delCookie);
-
-        ResponseCookie cookie = ResponseCookie.from("token", "")
-                .httpOnly(true)
-                .secure(isSecure)
-                .sameSite("None")
-                .path("/")
-                .maxAge(0)
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(Map.of("status", "bye"));
-
-
     }
+
 
     @GetMapping("/me")
     public ResponseEntity<?> me(@CookieValue(name = "token", required = false) String token) {
