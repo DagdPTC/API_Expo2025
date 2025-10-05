@@ -35,9 +35,19 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     private String jwtIssuer;
 
     private static final List<String> PUBLIC_PATHS = List.of(
+            // Auth endpoints
             "/api/auth/login",
             "/api/auth/logout",
-            "/auth/**",  // CRÍTICO: Incluye /auth/recovery/**
+
+            // ⭐ Recovery endpoints - EXPLÍCITOS
+            "/auth/recovery/request",
+            "/auth/recovery/verify",
+            "/auth/recovery/reset",
+
+            // Cualquier otra ruta /auth/**
+            "/auth/**",
+
+            // API públicos
             "/apiDocumentoIdentidad/**",
             "/apiPersona/**",
             "/apiUsuario/**",
@@ -51,6 +61,8 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             "/apiEstadoReserva/**",
             "/apiPlatillo/**",
             "/apiCategoria/**",
+
+            // Health check
             "/", "/actuator/health"
     );
 
