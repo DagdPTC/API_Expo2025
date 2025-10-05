@@ -47,11 +47,13 @@ public class AuthController {
         }
         UsuarioEntity user = userOpt.get();
 
+        // subject = correo
         String token = jwtUtils.create(
-                String.valueOf(user.getId()),
-                user.getCorreo(),
+                user.getCorreo(),             // ahora el 'sub'
+                String.valueOf(user.getId()), // pasa id en claim extra (p.ej. "uid")
                 user.getRol().getRol()
         );
+
 
         // En Heroku (HTTPS) debe quedar true; con ForwardedHeaderFilter funciona.
         boolean isSecure = true; // si prefieres: request.isSecure()
