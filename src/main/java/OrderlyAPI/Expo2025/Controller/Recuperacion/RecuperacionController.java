@@ -39,13 +39,23 @@ public class RecuperacionController {
 
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody Map<String,String> body) {
-        String correo = body.getOrDefault("correo","").trim();
-        String codigo = body.getOrDefault("codigo","").trim();
-        if (correo.isEmpty() || codigo.isEmpty())
-            return ResponseEntity.badRequest().body(Map.of("error","Datos incompletos"));
-        service.validarCodigo(correo, codigo);
-        return ResponseEntity.ok(Map.of("ok", true));
+        try {
+            String correo = body.getOrDefault("correo","").trim();
+            String codigo = body.getOrDefault("codigo","").trim();
+            if (correo.isEmpty() || codigo.isEmpty())
+                return ResponseEntity.badRequest().body(Map.of("error","Datos incompletos"));
+            service.validarCodigo(correo, codigo);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage())); // p.ej. "Código incorrecto"
+        } catch (IllegalStateException e) {
+            // expirado, sin activo, intentos, etc.
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno"));
+        }
     }
+
 
     @PostMapping("/reset")
     public ResponseEntity<?> reset(@RequestBody Map<String,String> body) {
