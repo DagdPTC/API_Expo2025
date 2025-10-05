@@ -57,6 +57,7 @@ public class AuthController {
         String origin = request.getHeader("Origin");
         boolean isDev = origin != null && (origin.contains("localhost") || origin.contains("127.0.0.1"));
 
+        // SIEMPRE establece la cookie (para otros clientes)
         ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("token", token)
                 .httpOnly(true)
                 .path("/")
@@ -64,21 +65,21 @@ public class AuthController {
 
         String setCookie;
         if (isDev) {
-            // Desarrollo: sin Secure, SameSite=Lax
             cookieBuilder.secure(false).sameSite("Lax");
             setCookie = cookieBuilder.build().toString();
         } else {
-            // Producción: Secure + SameSite=None + Partitioned
             cookieBuilder.secure(true).sameSite("None");
             setCookie = cookieBuilder.build().toString() + "; Partitioned";
         }
 
         response.addHeader(HttpHeaders.SET_COOKIE, setCookie);
 
+        // TAMBIÉN devuelve el token en el body para clientes cross-domain
         return ResponseEntity.ok(Map.of(
                 "status", "ok",
                 "rol", user.getRol().getRol(),
-                "correo", user.getCorreo()
+                "correo", user.getCorreo(),
+                "token", token  // <--- AÑADIDO
         ));
     }
 
@@ -109,10 +110,20 @@ public class AuthController {
 
 
     @GetMapping("/me")
-    public ResponseEntity<?> me(@CookieValue(name = "token", required = false) String token) {
+    public ResponseEntity<?> me(
+            @CookieValue(name = "token", required = false) String cookieToken,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        // Intenta cookie primero, luego header
+        String token = cookieToken;
+        if ((token == null || token.isBlank()) && authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        }
+
         if (token == null || token.isBlank()) {
             return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
         }
+
         try {
             var claims = jwtUtils.parseToken(token);
             String correo = claims.getSubject();
@@ -136,16 +147,16 @@ public class AuthController {
                 }
             } catch (Exception ignored) { }
 
-            var body = new java.util.HashMap<String, Object>();
-            body.put("correo", correo);
-            body.put("rol", rol);
-            body.put("username", username);
-            body.put("usuarioId", usuarioId);
-            if (idEmpleado != null) body.put("idEmpleado", idEmpleado);
+            var responseBody = new java.util.HashMap<String, Object>();
+            responseBody.put("correo", correo);
+            responseBody.put("rol", rol);
+            responseBody.put("username", username);
+            responseBody.put("usuarioId", usuarioId);
+            if (idEmpleado != null) responseBody.put("idEmpleado", idEmpleado);
 
             return ResponseEntity.ok()
                     .cacheControl(org.springframework.http.CacheControl.noStore())
-                    .body(body);
+                    .body(responseBody);
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
         }
