@@ -45,7 +45,7 @@ public class RecuperacionService {
 
         // 2) Throttling simple (máx X por hora)
         int enviados = recRepo.countUltimaHora(u.getId());
-        if (enviados >= 5) {
+        if (enviados >= 50) {
             throw new IllegalStateException("Demasiadas solicitudes. Intenta más tarde.");
         }
 

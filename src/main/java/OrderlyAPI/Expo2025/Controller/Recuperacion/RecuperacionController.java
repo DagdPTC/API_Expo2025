@@ -17,12 +17,24 @@ public class RecuperacionController {
 
     @PostMapping("/request")
     public ResponseEntity<?> request(@RequestBody Map<String,String> body,
-                                     @RequestHeader(value = "X-Forwarded-For", required = false) String xff) throws Exception {
-        String correo = body.getOrDefault("correo","").trim();
-        if (correo.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error","Correo requerido"));
-        String ip = (xff != null && !xff.isBlank()) ? xff.split(",")[0].trim() : "0.0.0.0";
-        service.solicitarCodigo(correo, ip);
-        return ResponseEntity.ok(Map.of("ok", true, "message", "Código enviado"));
+                                     @RequestHeader(value = "X-Forwarded-For", required = false) String xff) {
+        try {
+            String correo = body.getOrDefault("correo","").trim();
+            if (correo.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error","Correo requerido"));
+            }
+            String ip = (xff != null && !xff.isBlank()) ? xff.split(",")[0].trim() : "0.0.0.0";
+            service.solicitarCodigo(correo, ip);
+            return ResponseEntity.ok(Map.of("ok", true, "message", "Código enviado"));
+        } catch (IllegalArgumentException e) {
+            // p.ej. "El correo no existe"
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            // p.ej. "Demasiadas solicitudes. Intenta más tarde."
+            return ResponseEntity.status(429).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno"));
+        }
     }
 
     @PostMapping("/verify")
