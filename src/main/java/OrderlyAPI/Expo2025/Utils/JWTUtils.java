@@ -25,25 +25,26 @@ public class JWTUtils {
     private final Logger log = LoggerFactory.getLogger(JWTUtils.class);
 
     /**
-     * Metodo para crea JWT
-     * @param id
-     * @param correo
-     * @return
+     * Metodo para crear JWT
+     * @param correo - Email del usuario (será el subject)
+     * @param id - ID del usuario
+     * @param rol - Rol del usuario
+     * @return Token JWT
      */
-    public String create(String id, String correo, String rol){
+    public String create(String correo, String id, String rol){
         //Decodifica el secreto Base64 y crea una clave HMAC-SHA segura
         SecretKey signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecreto));
 
-        //Obtiene la fecha catual y calcula la fecha de expiración
+        //Obtiene la fecha actual y calcula la fecha de expiración
         Date now = new Date();
         Date expiration = new Date(now.getTime() + expiracionMs);
 
         //Construye el token con sus componentes
         return Jwts.builder()
-                .setId(id)                                              // ID único (JWT ID)
+                .setId(correo)                                          // ID único ahora es el correo
                 .setIssuedAt(now)                                       // Fecha de emisión
-                .setSubject(correo)                                     // Sujeto (usuario)
-                .claim("id", id)
+                .setSubject(correo)                                     // Subject = correo (IMPORTANTE)
+                .claim("id", id)                                        // ID de usuario como claim
                 .claim("rol", rol)
                 .setIssuer(issuer)                                      // Emisor del token
                 .setExpiration(expiracionMs >= 0 ? expiration : null)   // Expiración (si es >= 0)
