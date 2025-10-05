@@ -12,8 +12,8 @@ import java.util.Date;
 public class RecuperacionEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "recuperacion_seq")
-    @SequenceGenerator(name = "recuperacion_seq", sequenceName = "SEQ_RECUPERACION", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "recuperacion_contrasena_seq")
+    @SequenceGenerator(name = "recuperacion_contrasena_seq", sequenceName = "recuperacion_contrasena_seq", allocationSize = 1)
     @Column(name = "IDRECUPERACION")
     private Long idRecuperacion;
 
