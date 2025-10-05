@@ -1,14 +1,11 @@
 package OrderlyAPI.Expo2025.Utils;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,8 +15,6 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,11 +23,13 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(JwtCookieAuthFilter.class);
 
-    @Value("${security.jwt.secret}")
-    private String jwtSecret;
+    // CRÍTICO: Usar JWTUtils en lugar de duplicar lógica
+    private final JWTUtils jwtUtils;
 
-    @Value("${security.jwt.issuer:}")
-    private String jwtIssuer;
+    // Constructor injection
+    public JwtCookieAuthFilter(JWTUtils jwtUtils) {
+        this.jwtUtils = jwtUtils;
+    }
 
     private static final List<String> PUBLIC_PATHS = List.of(
             "/api/auth/login",
@@ -54,18 +51,11 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             "/apiEstadoReserva/**",
             "/apiPlatillo/**",
             "/apiCategoria/**",
+            "/debug/**",
             "/", "/actuator/health"
     );
 
     private final AntPathMatcher matcher = new AntPathMatcher();
-
-    /**
-     * CRÍTICO: Obtener la clave de firma con el mismo método que JWTUtils
-     */
-    private Key getSigningKey() {
-        String cleanSecret = jwtSecret.trim();
-        return Keys.hmacShaKeyFor(cleanSecret.getBytes(StandardCharsets.UTF_8));
-    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -156,7 +146,7 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
                 String val = c.get().getValue();
                 if (val != null && !val.isBlank()) {
                     log.info("✓ Token encontrado en cookie");
-                    return val.trim();  // Sanitizar
+                    return val.trim();
                 }
             }
         }
@@ -172,25 +162,20 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             String val = h.substring(7);
             if (!val.isBlank()) {
                 log.info("✓ Token encontrado en Authorization header");
-                return val.trim();  // Sanitizar
+                return val.trim();
             }
         }
 
         return null;
     }
 
+    /**
+     * CRÍTICO: Usa JWTUtils.parseToken() para garantizar misma lógica
+     */
     private Authentication buildAuthenticationFromJwt(String token, HttpServletRequest request) {
         try {
-            var parser = Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey());  // Usa el mismo método que create()
-
-            if (jwtIssuer != null && !jwtIssuer.isBlank()) {
-                parser.requireIssuer(jwtIssuer);
-            }
-
-            Claims claims = parser.build()
-                    .parseClaimsJws(token)
-                    .getBody();
+            // Usar JWTUtils en lugar de duplicar lógica
+            Claims claims = jwtUtils.parseToken(token);
 
             String subject = claims.getSubject();
             if (subject == null || subject.isBlank()) {

@@ -13,12 +13,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.ForwardedHeaderFilter;
-
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -26,6 +21,7 @@ public class SecurityConfig {
 
     private final JwtCookieAuthFilter jwtCookieAuthFilter;
 
+    // Constructor injection - Spring lo resuelve automáticamente
     public SecurityConfig(JwtCookieAuthFilter jwtCookieAuthFilter) {
         this.jwtCookieAuthFilter = jwtCookieAuthFilter;
     }
@@ -37,24 +33,25 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ============ CRÍTICO: OPTIONS PRIMERO ============
+                        // OPTIONS siempre permitido
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ============ RUTAS PÚBLICAS (ORDEN IMPORTA) ============
+                        // Health check
                         .requestMatchers(HttpMethod.GET, "/", "/actuator/health").permitAll()
 
-                        // Auth endpoints (login/logout)
+                        // Auth endpoints
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
 
-                        // ⭐ RECUPERACIÓN - DEBE IR ANTES DE /auth/** GENÉRICO
-                        .requestMatchers(HttpMethod.POST, "/auth/recovery/request").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/recovery/verify").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/recovery/reset").permitAll()
+                        // Recovery endpoints - DEBEN IR ANTES de /auth/**
+                        .requestMatchers(HttpMethod.POST,
+                                "/auth/recovery/request",
+                                "/auth/recovery/verify",
+                                "/auth/recovery/reset").permitAll()
 
-                        // Cualquier otra ruta bajo /auth/**
+                        // Catch-all para /auth/**
                         .requestMatchers("/auth/**").permitAll()
 
-                        // ============ API ENDPOINTS PÚBLICOS ============
+                        // APIs públicos
                         .requestMatchers("/apiReserva/**",
                                 "/apiTipoReserva/**",
                                 "/apiMesa/**",
@@ -69,7 +66,10 @@ public class SecurityConfig {
                                 "/apiPersona/**",
                                 "/apiUsuario/**").permitAll()
 
-                        // ============ TODO LO DEMÁS REQUIERE AUTH ============
+                        // Debug endpoint (ELIMINAR EN PRODUCCIÓN)
+                        .requestMatchers("/debug/**").permitAll()
+
+                        // Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
