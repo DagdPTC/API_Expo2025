@@ -47,22 +47,31 @@ public class AuthController {
         UsuarioEntity user = authService.obtenerUsuario(correo)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // IMPORTANTÍSIMO: subject = correo
         String token = jwtUtils.create(
-                user.getCorreo(),                  // sub = correo
-                String.valueOf(user.getId()),      // si lo usas como claim extra
+                user.getCorreo(),
+                String.valueOf(user.getId()),
                 user.getRol().getRol()
         );
 
-        // UN SOLO Set-Cookie, con CHIPS (Partitioned)
-        String setCookie = ResponseCookie.from("token", token)
+        // Detecta si es desarrollo (localhost) o producción
+        String origin = request.getHeader("Origin");
+        boolean isDev = origin != null && (origin.contains("localhost") || origin.contains("127.0.0.1"));
+
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("token", token)
                 .httpOnly(true)
-                .secure(true)          // Heroku es HTTPS
-                .sameSite("None")      // cross-site
                 .path("/")
-                .maxAge(Duration.ofDays(1))
-                .build()
-                .toString() + "; Partitioned";   // <-- clave
+                .maxAge(Duration.ofDays(1));
+
+        String setCookie;
+        if (isDev) {
+            // Desarrollo: sin Secure, SameSite=Lax
+            cookieBuilder.secure(false).sameSite("Lax");
+            setCookie = cookieBuilder.build().toString();
+        } else {
+            // Producción: Secure + SameSite=None + Partitioned
+            cookieBuilder.secure(true).sameSite("None");
+            setCookie = cookieBuilder.build().toString() + "; Partitioned";
+        }
 
         response.addHeader(HttpHeaders.SET_COOKIE, setCookie);
 
@@ -77,14 +86,22 @@ public class AuthController {
     // LOGOUT
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        String delCookie = ResponseCookie.from("token", "")
+        String origin = request.getHeader("Origin");
+        boolean isDev = origin != null && (origin.contains("localhost") || origin.contains("127.0.0.1"));
+
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("token", "")
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
                 .path("/")
-                .maxAge(0)
-                .build()
-                .toString() + "; Partitioned";
+                .maxAge(0);
+
+        String delCookie;
+        if (isDev) {
+            cookieBuilder.secure(false).sameSite("Lax");
+            delCookie = cookieBuilder.build().toString();
+        } else {
+            cookieBuilder.secure(true).sameSite("None");
+            delCookie = cookieBuilder.build().toString() + "; Partitioned";
+        }
 
         response.addHeader(HttpHeaders.SET_COOKIE, delCookie);
         return ResponseEntity.ok(Map.of("status", "bye"));
@@ -110,10 +127,9 @@ public class AuthController {
             String username = java.util.Optional.ofNullable(user.getNombreusuario()).orElse("Usuario");
             Long usuarioId = user.getId();
 
-            // Busca un IdEmpleado asociado al usuario (si existe)
             Long idEmpleado = null;
             try {
-                var empleados = user.getUsuario(); // List<EmpleadoEntity>
+                var empleados = user.getUsuario();
                 if (empleados != null && !empleados.isEmpty()) {
                     var first = empleados.get(0);
                     if (first != null) idEmpleado = first.getId();

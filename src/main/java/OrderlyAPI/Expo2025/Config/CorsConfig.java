@@ -6,7 +6,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -15,40 +14,31 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
 
-        // Orígenes permitidos - XAMPP corre en puerto 8080 por defecto
+        // Orígenes permitidos
         c.setAllowedOriginPatterns(List.of(
                 "http://localhost",
                 "http://localhost:*",
+                "http://127.0.0.1",
                 "http://127.0.0.1:*",
                 "https://orderly-api-b53514e40ebd.herokuapp.com",
-                "null" // Para file:// si abres HTML directamente
+                "null"
         ));
 
-        // Métodos HTTP permitidos
         c.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
         ));
 
-        // Headers permitidos - AGREGA MÁS PARA COMPATIBILIDAD
-        c.setAllowedHeaders(List.of(
-                "Content-Type",
-                "Authorization",
-                "X-Requested-With",
-                "Accept",
-                "Origin",
-                "Access-Control-Request-Method",
-                "Access-Control-Request-Headers"
-        ));
+        c.setAllowedHeaders(List.of("*"));
 
-        // Headers expuestos (para que el cliente pueda leerlos)
         c.setExposedHeaders(List.of(
                 "Access-Control-Allow-Origin",
                 "Access-Control-Allow-Credentials",
-                "Set-Cookie"
+                "Set-Cookie",
+                "Authorization"
         ));
 
-        c.setAllowCredentials(true); // Imprescindible para cookies
-        c.setMaxAge(3600L);           // Cachea preflights 1 hora
+        c.setAllowCredentials(true);
+        c.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
         s.registerCorsConfiguration("/**", c);

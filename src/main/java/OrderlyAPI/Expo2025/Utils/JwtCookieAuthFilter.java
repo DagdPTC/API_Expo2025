@@ -101,14 +101,24 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     }
 
     private String extractToken(HttpServletRequest req) {
+        // Primero intenta cookies
         if (req.getCookies() != null) {
             Optional<Cookie> c = Arrays.stream(req.getCookies())
                     .filter(k -> "token".equals(k.getName()) || "jwt".equals(k.getName()) || "jwt-token".equals(k.getName()))
                     .findFirst();
-            if (c.isPresent()) return c.get().getValue();
+            if (c.isPresent()) {
+                String val = c.get().getValue();
+                if (val != null && !val.isBlank()) return val;
+            }
         }
+
+        // Luego intenta header Authorization
         String h = req.getHeader("Authorization");
-        if (h != null && h.startsWith("Bearer ")) return h.substring(7);
+        if (h != null && h.startsWith("Bearer ")) {
+            String val = h.substring(7);
+            if (!val.isBlank()) return val;
+        }
+
         return null;
     }
 
