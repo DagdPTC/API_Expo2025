@@ -42,6 +42,7 @@ public class SecurityConfig {
 
                         // ====== RUTAS PÚBLICAS DE AUTH/RECOVERY ======
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
                         // si también tienes estas:
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

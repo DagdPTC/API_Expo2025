@@ -36,13 +36,10 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     // ==== Rutas públicas: este filtro NO se aplica ====
     private static final List<String> PUBLIC_PATHS = List.of(
             // auth abierto
-            "/api/auth/login",
-            "/api/auth/logout",
+            "/auth/**",          // <--- todo recovery, ping, reset, etc.
+            "/api/auth/**",      // <--- si usas /api/auth/login|logout
 
-            // recuperación de contraseña
-            "/auth/recovery/**",
-
-            // endpoints públicos que ya permitiste en SecurityConfig
+            // endpoints públicos existentes
             "/apiDocumentoIdentidad/**",
             "/apiPersona/**",
             "/apiUsuario/**",
@@ -57,6 +54,7 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             "/apiPlatillo/**",
             "/apiCategoria/**"
     );
+
 
     private final AntPathMatcher matcher = new AntPathMatcher();
 
