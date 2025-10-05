@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 
@@ -33,7 +34,7 @@ public class JWTUtils {
      */
     public String create(String correo, String id, String rol){
         //Decodifica el secreto Base64 y crea una clave HMAC-SHA segura
-        SecretKey signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecreto));
+        SecretKey signingKey = Keys.hmacShaKeyFor(jwtSecreto.getBytes(StandardCharsets.UTF_8));
 
         //Obtiene la fecha actual y calcula la fecha de expiración
         Date now = new Date();
