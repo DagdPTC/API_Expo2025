@@ -32,23 +32,20 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // SecurityConfig.java  (fragmento)
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/", "/actuator/health").permitAll()
-
-                        // Auth público necesario
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
-                        .requestMatchers("/auth/**").permitAll()  // recovery
+                        // OPTIONS DEBE SER LA PRIMERA REGLA - CRÍTICO PARA CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // /api/auth/me debe requerir auth
+                        .requestMatchers(HttpMethod.GET, "/", "/actuator/health").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
 
-                        // resto de tus rutas públicas existentes
                         .requestMatchers("/apiReserva/**",
                                 "/apiTipoReserva/**",
                                 "/apiMesa/**",
@@ -58,7 +55,10 @@ public class SecurityConfig {
                                 "/apiEstadoReserva/**",
                                 "/apiPlatillo/**",
                                 "/apiCategoria/**",
-                                "/apiEmpleado/**").permitAll()
+                                "/apiEmpleado/**",
+                                "/apiDocumentoIdentidad/**",
+                                "/apiPersona/**",
+                                "/apiUsuario/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
@@ -67,7 +67,6 @@ public class SecurityConfig {
                         .accessDeniedHandler((req, res, e) -> res.sendError(HttpServletResponse.SC_FORBIDDEN))
                 )
                 .addFilterBefore(jwtCookieAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
 
         return http.build();
     }
