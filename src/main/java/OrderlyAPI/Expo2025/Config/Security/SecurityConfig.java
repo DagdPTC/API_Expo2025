@@ -49,6 +49,8 @@ public class SecurityConfig {
                                 "/apiEmpleado/createEmpleado"
                         ).permitAll()
 
+                        .requestMatchers("/auth/recovery/**").permitAll()
+
                         // APIs públicas
                         .requestMatchers("/apiReserva/**").permitAll()
                         .requestMatchers("/apiTipoReserva/**").permitAll()
