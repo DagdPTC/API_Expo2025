@@ -121,17 +121,22 @@ public class AuthController {
         }
 
         if (token == null || token.isBlank()) {
-            return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
+            return ResponseEntity.status(401).body(Map.of("error", "No autenticado - no hay token"));
         }
 
         try {
             var claims = jwtUtils.parseToken(token);
             String correo = claims.getSubject();
+
+            if (correo == null || correo.isBlank()) {
+                return ResponseEntity.status(401).body(Map.of("error", "Token sin subject"));
+            }
+
             String rol = jwtUtils.extractRol(token);
 
             Optional<UsuarioEntity> userOpt = authService.obtenerUsuario(correo);
             if (userOpt.isEmpty()) {
-                return ResponseEntity.status(401).body(Map.of("error", "Usuario no encontrado"));
+                return ResponseEntity.status(401).body(Map.of("error", "Usuario no encontrado: " + correo));
             }
             UsuarioEntity user = userOpt.get();
 
@@ -158,7 +163,7 @@ public class AuthController {
                     .cacheControl(org.springframework.http.CacheControl.noStore())
                     .body(responseBody);
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+            return ResponseEntity.status(401).body(Map.of("error", "Token invalido: " + e.getMessage()));
         }
     }
 }

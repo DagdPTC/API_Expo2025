@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
+                        .requestMatchers("/api/auth/me").permitAll()  // Temporalmente público
 
                         .requestMatchers("/apiReserva/**",
                                 "/apiTipoReserva/**",
