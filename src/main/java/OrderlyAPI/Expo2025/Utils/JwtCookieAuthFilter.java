@@ -135,7 +135,20 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     }
 
     private String extractToken(HttpServletRequest req) {
-        // 1. Buscar en cookies
+        // CRÍTICO: Priorizar Authorization header sobre cookies
+        // Esto evita que cookies corruptas interfieran
+
+        // 1. Buscar en header Authorization PRIMERO
+        String h = req.getHeader("Authorization");
+        if (h != null && h.startsWith("Bearer ")) {
+            String val = h.substring(7);
+            if (!val.isBlank()) {
+                log.info("✓ Token encontrado en Authorization header (prioridad alta)");
+                return val.trim();
+            }
+        }
+
+        // 2. Solo si no hay header, buscar en cookies
         if (req.getCookies() != null) {
             Optional<Cookie> c = Arrays.stream(req.getCookies())
                     .filter(k -> "token".equals(k.getName()) ||
@@ -145,27 +158,13 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             if (c.isPresent()) {
                 String val = c.get().getValue();
                 if (val != null && !val.isBlank()) {
-                    log.info("✓ Token encontrado en cookie");
+                    log.info("✓ Token encontrado en cookie (fallback)");
                     return val.trim();
                 }
             }
         }
 
-        // 2. Buscar en header Authorization
-        String h = req.getHeader("Authorization");
-        if (h != null) {
-            log.info("Authorization header presente: {}...",
-                    h.substring(0, Math.min(30, h.length())));
-        }
-
-        if (h != null && h.startsWith("Bearer ")) {
-            String val = h.substring(7);
-            if (!val.isBlank()) {
-                log.info("✓ Token encontrado en Authorization header");
-                return val.trim();
-            }
-        }
-
+        log.warn("✗ No se encontró token en Authorization header ni en cookies");
         return null;
     }
 
