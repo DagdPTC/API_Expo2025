@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 @Component
 public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(JwtCookieAuthFilter.class);
+
     @Value("${security.jwt.secret}")
     private String jwtSecret;
 
@@ -80,38 +82,36 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         String method = request.getMethod();
 
-        System.out.println("🔍 JwtCookieAuthFilter: " + method + " " + uri);
+        log.info("JwtCookieAuthFilter: {} {}", method, uri);
 
         String token = extractToken(request);
 
         if (token == null || token.isBlank()) {
-            System.out.println("⚠️  No se encontró token para: " + uri);
+            log.warn("No se encontro token para: {}", uri);
             chain.doFilter(request, response);
             return;
         }
 
-        System.out.println("✓ Token encontrado: " + token.substring(0, Math.min(20, token.length())) + "...");
+        log.info("Token encontrado: {}...", token.substring(0, Math.min(20, token.length())));
 
         try {
             Authentication auth = buildAuthenticationFromJwt(token, request);
             if (auth != null) {
-                System.out.println("✓ Autenticación exitosa: " + auth.getName());
+                log.info("Autenticacion exitosa: {}", auth.getName());
                 org.springframework.security.core.context.SecurityContextHolder.getContext()
                         .setAuthentication(auth);
             } else {
-                System.out.println("❌ buildAuthenticationFromJwt retornó null");
+                log.error("buildAuthenticationFromJwt retorno null");
             }
             chain.doFilter(request, response);
 
         } catch (Exception ex) {
-            System.err.println("❌ Error parseando token: " + ex.getMessage());
-            ex.printStackTrace();
+            log.error("Error parseando token: {}", ex.getMessage(), ex);
             chain.doFilter(request, response);
         }
     }
 
     private String extractToken(HttpServletRequest req) {
-        // Primero intenta cookies
         if (req.getCookies() != null) {
             Optional<Cookie> c = Arrays.stream(req.getCookies())
                     .filter(k -> "token".equals(k.getName()) || "jwt".equals(k.getName()) || "jwt-token".equals(k.getName()))
@@ -119,20 +119,19 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             if (c.isPresent()) {
                 String val = c.get().getValue();
                 if (val != null && !val.isBlank()) {
-                    System.out.println("   → Token de cookie");
+                    log.info("Token de cookie");
                     return val;
                 }
             }
         }
 
-        // Luego intenta header Authorization
         String h = req.getHeader("Authorization");
-        System.out.println("   → Authorization header: " + (h != null ? h.substring(0, Math.min(30, h.length())) + "..." : "null"));
+        log.info("Authorization header: {}", (h != null ? h.substring(0, Math.min(30, h.length())) + "..." : "null"));
 
         if (h != null && h.startsWith("Bearer ")) {
             String val = h.substring(7);
             if (!val.isBlank()) {
-                System.out.println("   → Token de Authorization header");
+                log.info("Token de Authorization header");
                 return val;
             }
         }
