@@ -2,6 +2,7 @@ package OrderlyAPI.Expo2025.Controller.Recuperacion;
 
 import OrderlyAPI.Expo2025.Services.Recuperacion.RecuperacionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,14 +40,28 @@ public class RecuperacionController {
         String correo = body.getOrDefault("correo","").trim();
         String nuevaContrasena = body.getOrDefault("nuevaContrasena","").trim();
 
+        // Validaciones
         if (correo.isEmpty() || nuevaContrasena.isEmpty())
             return ResponseEntity.badRequest().body(Map.of("error","Datos incompletos"));
 
-        // Validación básica de contraseña
         if (nuevaContrasena.length() < 8)
             return ResponseEntity.badRequest().body(Map.of("error","La contraseña debe tener al menos 8 caracteres"));
 
-        service.resetearContrasena(correo, nuevaContrasena);
-        return ResponseEntity.ok(Map.of("ok", true, "message", "Contraseña actualizada exitosamente"));
+        // Validación de complejidad (opcional pero recomendado)
+        if (!nuevaContrasena.matches(".*[A-Z].*"))
+            return ResponseEntity.badRequest().body(Map.of("error","La contraseña debe contener al menos una mayúscula"));
+
+        if (!nuevaContrasena.matches(".*[0-9].*"))
+            return ResponseEntity.badRequest().body(Map.of("error","La contraseña debe contener al menos un número"));
+
+        try {
+            service.resetearContrasena(correo, nuevaContrasena);
+            return ResponseEntity.ok(Map.of("ok", true, "message", "Contraseña actualizada exitosamente"));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error interno al procesar la solicitud"));
+        }
     }
 }

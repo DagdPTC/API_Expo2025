@@ -1,5 +1,6 @@
 package OrderlyAPI.Expo2025.Services.Recuperacion;
 
+import OrderlyAPI.Expo2025.Config.Argon2.Argon2Password;
 import OrderlyAPI.Expo2025.Entities.RecuperacionContrasena.RecuperacionEntity;
 import OrderlyAPI.Expo2025.Entities.Usuario.UsuarioEntity;
 import OrderlyAPI.Expo2025.Repositories.RecuperaconContrasena.RecuperacionRepository;
@@ -8,6 +9,7 @@ import OrderlyAPI.Expo2025.Utils.Recovery.MailService;
 import OrderlyAPI.Expo2025.Utils.Recovery.OtpUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,9 @@ public class RecuperacionService {
     private final RecuperacionRepository recRepo;
     private final OtpUtil otp;
     private final MailService mail;
+
+    @Autowired
+    private Argon2Password argon2Password;
 
     @Value("${OTP_TTL_MIN:10}")
     private int ttlMin;
@@ -97,7 +102,6 @@ public class RecuperacionService {
         recRepo.actualizarEstado(r.getIdRecuperacion(), "VERIFICADO");
     }
 
-    /* ======= Paso C: resetear contraseña ======= */
     @Transactional
     public void resetearContrasena(String correo, String nuevaContrasena) {
         // 1) Usuario
@@ -123,11 +127,14 @@ public class RecuperacionService {
             throw new IllegalStateException("El tiempo para resetear ha expirado. Solicita un nuevo código.");
         }
 
-        // 4) Actualizar contraseña (SIN HASHEAR - tu sistema lo maneja diferente)
-        u.setContrasenia(nuevaContrasena);
+        // 4) Encriptar la nueva contraseña con Argon2
+        String contrasenaEncriptada = argon2Password.EncryptPassword(nuevaContrasena);
+
+        // 5) Actualizar contraseña encriptada
+        u.setContrasenia(contrasenaEncriptada);
         usuarioRepo.save(u);
 
-        // 5) Marcar como usado
+        // 6) Marcar como usado
         recRepo.actualizarEstado(r.getIdRecuperacion(), "USADO");
     }
 }
