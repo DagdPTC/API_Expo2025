@@ -1,133 +1,171 @@
 package OrderlyAPI.Expo2025.Utils;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.*;
+import java.util.stream.Collectors;
 
-/**
- * Filtro JWT:
- * - Normaliza la URI (remueve context-path) antes de chequear rutas públicas.
- * - SOLO son públicos: POST /api/auth/login (y opcional POST /api/auth/logout).
- * - /api/auth/me NO es público: requiere cookie y autenticación.
- * - Cookie usada: "authToken".
- */
+@Component
 public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
-    private static final Logger log = LoggerFactory.getLogger(JwtCookieAuthFilter.class);
+    // ==== Configuración de validación del JWT ====
+    @Value("${security.jwt.secret}")
+    private String jwtSecret;
 
-    private static final String AUTH_COOKIE_NAME = "authToken";
-    private final JWTUtils jwtUtils;
+    @Value("${security.jwt.issuer:}")
+    private String jwtIssuer; // opcional
 
-    public JwtCookieAuthFilter(JWTUtils jwtUtils) {
-        this.jwtUtils = jwtUtils;
+    // ==== Rutas públicas: este filtro NO se aplica ====
+    private static final List<String> PUBLIC_PATHS = List.of(
+            // auth abierto
+            "/api/auth/login",
+            "/api/auth/logout",
+
+            // recuperación de contraseña
+            "/auth/recovery/**",
+
+            // endpoints públicos que ya permitiste en SecurityConfig
+            "/apiDocumentoIdentidad/**",
+            "/apiPersona/**",
+            "/apiUsuario/**",
+            "/apiEmpleado/**",
+            "/apiReserva/**",
+            "/apiTipoReserva/**",
+            "/apiMesa/**",
+            "/apiPedido/**",
+            "/apiEstadoMesa/**",
+            "/apiEstadoPedido/**",
+            "/apiEstadoReserva/**",
+            "/apiPlatillo/**",
+            "/apiCategoria/**"
+    );
+
+    private final AntPathMatcher matcher = new AntPathMatcher();
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // No filtrar preflight
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
+
+        String uri = request.getRequestURI();
+        return PUBLIC_PATHS.stream().anyMatch(p -> matcher.match(p, uri));
     }
 
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain
+            FilterChain chain
     ) throws ServletException, IOException {
 
-        // 1) Rutas públicas + preflight
-        if (isPublicEndpoint(request)) {
-            filterChain.doFilter(request, response);
+        // 1) intentar extraer token (cookie "token"/"jwt" o Authorization: Bearer ...)
+        String token = extractToken(request);
+
+        // 2) Si NO hay token => continuar como anónimo (NO 401)
+        if (token == null || token.isBlank()) {
+            chain.doFilter(request, response);
             return;
         }
 
         try {
-            // 2) Token desde cookie
-            String token = extractTokenFromCookies(request);
-            if (token == null || token.isBlank()) {
-                sendError(response, "Token no encontrado", HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+            // 3) Validar y construir Authentication
+            Authentication auth = buildAuthenticationFromJwt(token, request);
+
+            // Si el token fue válido, setear contexto
+            if (auth != null) {
+                org.springframework.security.core.context.SecurityContextHolder.getContext()
+                        .setAuthentication(auth);
             }
 
-            // 3) Validar token y construir Authentication
-            Claims claims = jwtUtils.parseToken(token);
-            String rol = jwtUtils.extractRol(token);
+            // 4) Continuar la cadena
+            chain.doFilter(request, response);
 
-            Collection<? extends GrantedAuthority> authorities =
-                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + rol));
-
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
-
-            SecurityContextHolder.getContext().setAuthentication(auth);
-
-            // 4) Continuar
-            filterChain.doFilter(request, response);
-
-        } catch (ExpiredJwtException e) {
-            log.warn("Token expirado: {}", e.getMessage());
-            sendError(response, "Token expirado", HttpServletResponse.SC_UNAUTHORIZED);
-        } catch (MalformedJwtException e) {
-            log.warn("Token malformado: {}", e.getMessage());
-            sendError(response, "Token inválido", HttpServletResponse.SC_FORBIDDEN);
-        } catch (Exception e) {
-            log.error("Error de autenticación", e);
-            sendError(response, "Error de autenticación", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        } catch (Exception ex) {
+            // 5) Solo si venía token pero es inválido => 401
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Token inválido\"}");
         }
     }
 
-    private boolean isPublicEndpoint(HttpServletRequest request) {
-        String uri = request.getRequestURI();
-        String ctx = request.getContextPath();
-        if (ctx != null && !ctx.isEmpty() && uri.startsWith(ctx)) {
-            uri = uri.substring(ctx.length());
+    // ====== Helpers ======
+
+    private String extractToken(HttpServletRequest req) {
+        // Cookie
+        if (req.getCookies() != null) {
+            Optional<Cookie> c = Arrays.stream(req.getCookies())
+                    .filter(k -> "token".equals(k.getName()) || "jwt".equals(k.getName()))
+                    .findFirst();
+            if (c.isPresent()) return c.get().getValue();
         }
-        String method = request.getMethod();
-        if ("OPTIONS".equalsIgnoreCase(method)) return true;
-        if ("/api/auth/login".equals(uri) && "POST".equalsIgnoreCase(method)) return true;
-        if ("/api/auth/logout".equals(uri) && "POST".equalsIgnoreCase(method)) return true;
-
-        // ---------- PÚBLICOS ----------
-        if (uri.startsWith("/apiReserva")) return true;
-        if (uri.startsWith("/apiTipoReserva")) return true;
-        if (uri.startsWith("/apiMesa")) return true;
-        if (uri.startsWith("/apiPedido")) return true;           // <-- NUEVO
-        if (uri.startsWith("/apiEstadoMesa")) return true;       // (labels)
-        if (uri.startsWith("/apiEstadoPedido")) return true;
-        if (uri.startsWith("/apiEstadoReserva")) return true;
-        if (uri.startsWith("/apiPlatillo")) return true;
-        // ------------------------------
-
-        return false;
+        // Header Authorization
+        String h = req.getHeader("Authorization");
+        if (h != null && h.startsWith("Bearer ")) return h.substring(7);
+        return null;
     }
 
+    private Authentication buildAuthenticationFromJwt(String token, HttpServletRequest request) {
+        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 
+        var parser = Jwts.parserBuilder().setSigningKey(key);
+        if (jwtIssuer != null && !jwtIssuer.isBlank()) {
+            parser.requireIssuer(jwtIssuer);
+        }
 
-    private String extractTokenFromCookies(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies == null) return null;
-        return Arrays.stream(cookies)
-                .filter(c -> AUTH_COOKIE_NAME.equals(c.getName()))
-                .findFirst()
-                .map(Cookie::getValue)
-                .orElse(null);
+        Claims claims = parser.build().parseClaimsJws(token).getBody();
+
+        String subject = claims.getSubject(); // email/username
+        if (subject == null || subject.isBlank()) return null;
+
+        // Roles opcionales en claim "roles" (String "ADMIN,USER" o List)
+        Collection<SimpleGrantedAuthority> auths = extractAuthorities(claims);
+
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(subject, null, auths);
+        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        return auth;
     }
 
-    private void sendError(HttpServletResponse response, String message, int status) throws IOException {
-        response.setContentType("application/json");
-        response.setStatus(status);
-        response.getWriter().write(String.format("{\"error\":\"%s\",\"status\":%d}", message, status));
+    @SuppressWarnings("unchecked")
+    private Collection<SimpleGrantedAuthority> extractAuthorities(Claims claims) {
+        Object rolesObj = claims.get("roles");
+        if (rolesObj == null) return Collections.emptyList();
+
+        List<String> roles;
+        if (rolesObj instanceof String s) {
+            roles = Arrays.stream(s.split(","))
+                    .map(String::trim)
+                    .filter(r -> !r.isEmpty())
+                    .toList();
+        } else if (rolesObj instanceof Collection<?> col) {
+            roles = col.stream().map(String::valueOf).toList();
+        } else {
+            roles = List.of(String.valueOf(rolesObj));
+        }
+
+        // Spring Security espera "ROLE_X"
+        return roles.stream()
+                .filter(r -> !r.isBlank())
+                .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toSet());
     }
 }
