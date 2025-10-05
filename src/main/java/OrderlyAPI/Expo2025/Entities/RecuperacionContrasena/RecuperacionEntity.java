@@ -1,16 +1,19 @@
 package OrderlyAPI.Expo2025.Entities.RecuperacionContrasena;
 
-
 import jakarta.persistence.*;
-import lombok.Getter; import lombok.Setter;
+import lombok.Getter;
+import lombok.Setter;
 import java.util.Date;
 
-@Getter @Setter
+@Getter
+@Setter
 @Entity
 @Table(name = "RECUPERACIONCONTRASENA")
 public class RecuperacionEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "recuperacion_seq")
+    @SequenceGenerator(name = "recuperacion_seq", sequenceName = "SEQ_RECUPERACION", allocationSize = 1)
     @Column(name = "IDRECUPERACION")
     private Long idRecuperacion;
 
