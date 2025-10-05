@@ -49,10 +49,21 @@ public class AuthController {
 
         // subject = correo
         String token = jwtUtils.create(
-                user.getCorreo(),             // ahora el 'sub'
-                String.valueOf(user.getId()), // pasa id en claim extra (p.ej. "uid")
+                user.getCorreo(),              // sub
+                String.valueOf(user.getId()),  // otro claim (si lo usas)
                 user.getRol().getRol()
         );
+
+        String setCookie = ResponseCookie.from("token", token)
+                .httpOnly(true)
+                .secure(true)        // en Heroku es HTTPS
+                .sameSite("None")    // cross-site
+                .path("/")
+                .maxAge(Duration.ofDays(1))
+                .build()
+                .toString() + "; Partitioned";   // <-- CHIPS
+
+        response.addHeader(HttpHeaders.SET_COOKIE, setCookie);
 
 
         // En Heroku (HTTPS) debe quedar true; con ForwardedHeaderFilter funciona.
@@ -79,6 +90,17 @@ public class AuthController {
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         boolean isSecure = true; // o request.isSecure()
 
+        String delCookie = ResponseCookie.from("token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(0)
+                .build()
+                .toString() + "; Partitioned";
+
+        response.addHeader(HttpHeaders.SET_COOKIE, delCookie);
+
         ResponseCookie cookie = ResponseCookie.from("token", "")
                 .httpOnly(true)
                 .secure(isSecure)
@@ -89,6 +111,8 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(Map.of("status", "bye"));
+
+
     }
 
     @GetMapping("/me")
