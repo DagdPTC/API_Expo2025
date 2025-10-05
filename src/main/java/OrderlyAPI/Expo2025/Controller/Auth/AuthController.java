@@ -114,10 +114,16 @@ public class AuthController {
             @CookieValue(name = "token", required = false) String cookieToken,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
-        // Intenta cookie primero, luego header
-        String token = cookieToken;
-        if ((token == null || token.isBlank()) && authHeader != null && authHeader.startsWith("Bearer ")) {
+        String token = null;
+
+        // 1. Intentar desde Authorization header PRIMERO
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
+        }
+
+        // 2. Solo si no hay header, usar cookie como fallback
+        if ((token == null || token.isBlank()) && cookieToken != null && !cookieToken.isBlank()) {
+            token = cookieToken;
         }
 
         if (token == null || token.isBlank()) {
