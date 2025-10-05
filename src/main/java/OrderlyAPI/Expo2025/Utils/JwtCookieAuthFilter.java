@@ -32,18 +32,12 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     private String jwtSecret;
 
     @Value("${security.jwt.issuer:}")
-    private String jwtIssuer; // opcional
+    private String jwtIssuer;
 
-    // JwtCookieAuthFilter.java  (solo la lista)
     private static final List<String> PUBLIC_PATHS = List.of(
-            // auth abierto necesario
             "/api/auth/login",
             "/api/auth/logout",
-
-            // recuperación de contraseña
             "/auth/**",
-
-            // endpoints públicos que ya tienes
             "/apiDocumentoIdentidad/**",
             "/apiPersona/**",
             "/apiUsuario/**",
@@ -57,11 +51,8 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             "/apiEstadoReserva/**",
             "/apiPlatillo/**",
             "/apiCategoria/**",
-
-            // health/root
             "/", "/actuator/health"
     );
-
 
     private final AntPathMatcher matcher = new AntPathMatcher();
 
@@ -160,8 +151,16 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
     @SuppressWarnings("unchecked")
     private Collection<SimpleGrantedAuthority> extractAuthorities(Claims claims) {
+        // CORREGIDO: Busca tanto "roles" (plural) como "rol" (singular)
         Object rolesObj = claims.get("roles");
-        if (rolesObj == null) return Collections.emptyList();
+        if (rolesObj == null) {
+            rolesObj = claims.get("rol");  // <-- ESTA ES LA LÍNEA CRÍTICA
+        }
+
+        if (rolesObj == null) {
+            log.warn("No se encontraron roles en el token");
+            return Collections.emptyList();
+        }
 
         List<String> roles;
         if (rolesObj instanceof String s) {
@@ -171,6 +170,7 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         } else {
             roles = List.of(String.valueOf(rolesObj));
         }
+
         return roles.stream()
                 .filter(r -> !r.isBlank())
                 .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
