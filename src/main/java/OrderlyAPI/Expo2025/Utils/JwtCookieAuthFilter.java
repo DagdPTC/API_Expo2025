@@ -26,20 +26,16 @@ import java.util.stream.Collectors;
 @Component
 public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
-    // ==== Configuración de validación del JWT ====
     @Value("${security.jwt.secret}")
     private String jwtSecret;
 
     @Value("${security.jwt.issuer:}")
     private String jwtIssuer; // opcional
 
-    // ==== Rutas públicas: este filtro NO se aplica ====
     private static final List<String> PUBLIC_PATHS = List.of(
-            // auth abierto
-            "/auth/**",          // <--- todo recovery, ping, reset, etc.
-            "/api/auth/**",      // <--- si usas /api/auth/login|logout
+            "/auth/**",
+            "/api/auth/**",
 
-            // endpoints públicos existentes
             "/apiDocumentoIdentidad/**",
             "/apiPersona/**",
             "/apiUsuario/**",
@@ -52,17 +48,16 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             "/apiEstadoPedido/**",
             "/apiEstadoReserva/**",
             "/apiPlatillo/**",
-            "/apiCategoria/**"
-    );
+            "/apiCategoria/**",
 
+            "/", "/actuator/health"
+    );
 
     private final AntPathMatcher matcher = new AntPathMatcher();
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // No filtrar preflight
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
-
         String uri = request.getRequestURI();
         return PUBLIC_PATHS.stream().anyMatch(p -> matcher.match(p, uri));
     }
@@ -74,47 +69,36 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             FilterChain chain
     ) throws ServletException, IOException {
 
-        // 1) intentar extraer token (cookie "token"/"jwt" o Authorization: Bearer ...)
         String token = extractToken(request);
 
-        // 2) Si NO hay token => continuar como anónimo (NO 401)
         if (token == null || token.isBlank()) {
             chain.doFilter(request, response);
             return;
         }
 
         try {
-            // 3) Validar y construir Authentication
             Authentication auth = buildAuthenticationFromJwt(token, request);
-
-            // Si el token fue válido, setear contexto
             if (auth != null) {
                 org.springframework.security.core.context.SecurityContextHolder.getContext()
                         .setAuthentication(auth);
             }
-
-            // 4) Continuar la cadena
             chain.doFilter(request, response);
 
         } catch (Exception ex) {
-            // 5) Solo si venía token pero es inválido => 401
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"Token inválido\"}");
+            // IMPORTANTE: no responder 401 aquí.
+            // Deja que la cadena de seguridad decida (si la ruta es pública,
+            // pasará; si es protegida, devolverá 401 más adelante).
+            chain.doFilter(request, response);
         }
     }
 
-    // ====== Helpers ======
-
     private String extractToken(HttpServletRequest req) {
-        // Cookie
         if (req.getCookies() != null) {
             Optional<Cookie> c = Arrays.stream(req.getCookies())
-                    .filter(k -> "token".equals(k.getName()) || "jwt".equals(k.getName()))
+                    .filter(k -> "token".equals(k.getName()) || "jwt".equals(k.getName()) || "jwt-token".equals(k.getName()))
                     .findFirst();
             if (c.isPresent()) return c.get().getValue();
         }
-        // Header Authorization
         String h = req.getHeader("Authorization");
         if (h != null && h.startsWith("Bearer ")) return h.substring(7);
         return null;
@@ -124,16 +108,13 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 
         var parser = Jwts.parserBuilder().setSigningKey(key);
-        if (jwtIssuer != null && !jwtIssuer.isBlank()) {
-            parser.requireIssuer(jwtIssuer);
-        }
+        if (jwtIssuer != null && !jwtIssuer.isBlank()) parser.requireIssuer(jwtIssuer);
 
         Claims claims = parser.build().parseClaimsJws(token).getBody();
 
-        String subject = claims.getSubject(); // email/username
+        String subject = claims.getSubject();
         if (subject == null || subject.isBlank()) return null;
 
-        // Roles opcionales en claim "roles" (String "ADMIN,USER" o List)
         Collection<SimpleGrantedAuthority> auths = extractAuthorities(claims);
 
         UsernamePasswordAuthenticationToken auth =
@@ -149,17 +130,12 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
         List<String> roles;
         if (rolesObj instanceof String s) {
-            roles = Arrays.stream(s.split(","))
-                    .map(String::trim)
-                    .filter(r -> !r.isEmpty())
-                    .toList();
+            roles = Arrays.stream(s.split(",")).map(String::trim).filter(r -> !r.isEmpty()).toList();
         } else if (rolesObj instanceof Collection<?> col) {
             roles = col.stream().map(String::valueOf).toList();
         } else {
             roles = List.of(String.valueOf(rolesObj));
         }
-
-        // Spring Security espera "ROLE_X"
         return roles.stream()
                 .filter(r -> !r.isBlank())
                 .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
