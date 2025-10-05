@@ -77,25 +77,35 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             FilterChain chain
     ) throws ServletException, IOException {
 
+        String uri = request.getRequestURI();
+        String method = request.getMethod();
+
+        System.out.println("🔍 JwtCookieAuthFilter: " + method + " " + uri);
+
         String token = extractToken(request);
 
         if (token == null || token.isBlank()) {
+            System.out.println("⚠️  No se encontró token para: " + uri);
             chain.doFilter(request, response);
             return;
         }
 
+        System.out.println("✓ Token encontrado: " + token.substring(0, Math.min(20, token.length())) + "...");
+
         try {
             Authentication auth = buildAuthenticationFromJwt(token, request);
             if (auth != null) {
+                System.out.println("✓ Autenticación exitosa: " + auth.getName());
                 org.springframework.security.core.context.SecurityContextHolder.getContext()
                         .setAuthentication(auth);
+            } else {
+                System.out.println("❌ buildAuthenticationFromJwt retornó null");
             }
             chain.doFilter(request, response);
 
         } catch (Exception ex) {
-            // IMPORTANTE: no responder 401 aquí.
-            // Deja que la cadena de seguridad decida (si la ruta es pública,
-            // pasará; si es protegida, devolverá 401 más adelante).
+            System.err.println("❌ Error parseando token: " + ex.getMessage());
+            ex.printStackTrace();
             chain.doFilter(request, response);
         }
     }
@@ -108,15 +118,23 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
                     .findFirst();
             if (c.isPresent()) {
                 String val = c.get().getValue();
-                if (val != null && !val.isBlank()) return val;
+                if (val != null && !val.isBlank()) {
+                    System.out.println("   → Token de cookie");
+                    return val;
+                }
             }
         }
 
         // Luego intenta header Authorization
         String h = req.getHeader("Authorization");
+        System.out.println("   → Authorization header: " + (h != null ? h.substring(0, Math.min(30, h.length())) + "..." : "null"));
+
         if (h != null && h.startsWith("Bearer ")) {
             String val = h.substring(7);
-            if (!val.isBlank()) return val;
+            if (!val.isBlank()) {
+                System.out.println("   → Token de Authorization header");
+                return val;
+            }
         }
 
         return null;
