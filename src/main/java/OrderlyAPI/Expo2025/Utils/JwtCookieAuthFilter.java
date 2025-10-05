@@ -63,17 +63,10 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
         boolean shouldSkip = PUBLIC_PATHS.stream().anyMatch(p -> matcher.match(p, uri));
-
         log.info("shouldNotFilter: URI={}, shouldSkip={}", uri, shouldSkip);
-
-        if (shouldSkip) {
-            log.info("✓ Path {} coincide con rutas públicas - OMITIENDO filtro JWT", uri);
-        } else {
-            log.warn("✗ Path {} NO coincide - REQUIERE autenticación", uri);
-        }
-
         return shouldSkip;
     }
+
 
     @Override
     protected void doFilterInternal(
@@ -90,10 +83,9 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
         String token = extractToken(request);
 
         if (token == null || token.isBlank()) {
-            log.warn("⚠ No se encontró token para: {} - Rechazando request", uri);
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"Token requerido\"}");
+            // No hay token: NO cortar. Deja que Spring Security aplique permitAll()/auth.
+            log.info("Sin token para {} {} - continuando cadena de filtros", method, uri);
+            chain.doFilter(request, response);
             return;
         }
 
