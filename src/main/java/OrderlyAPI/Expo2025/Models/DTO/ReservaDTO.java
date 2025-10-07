@@ -39,7 +39,7 @@ public class ReservaDTO {
 
 
     @Min(value = 1, message = "Debe haber al menos una persona")
-    @Max(value = 20, message = "No puede haber mas de 20 personas")
+    @Max(value = 200, message = "No puede haber mas de 20 personas")
     private Long CantidadPersonas;
 
     private Long idTipoReserva;
