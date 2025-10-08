@@ -64,6 +64,7 @@ public class SecurityConfig {
                                 "/apiEmpleado/**",
                                 "/apiDocumentoIdentidad/**",
                                 "/apiPersona/**",
+                                "/apiHistorialPedido/",
                                 "/apiUsuario/**").permitAll()
 
                         // Debug endpoint (ELIMINAR EN PRODUCCIÓN)
