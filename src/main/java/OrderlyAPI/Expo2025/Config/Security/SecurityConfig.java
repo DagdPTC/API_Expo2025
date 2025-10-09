@@ -64,14 +64,12 @@ public class SecurityConfig {
                                 "/apiEmpleado/**",
                                 "/apiDocumentoIdentidad/**",
                                 "/apiPersona/**",
-                                "/apiHistorialPedido/",
+                                "/apiHistorialPedido/**",
                                 "/apiUsuario/**").permitAll()
 
-                        // Debug endpoint (ELIMINAR EN PRODUCCIÓN)
-                        .requestMatchers("/debug/**").permitAll()
+                        .requestMatchers("/apiFactura/**").authenticated()
+                        .requestMatchers("/apiHistorialPedido/**").authenticated()
 
-                        // Todo lo demás requiere autenticación
-                        .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
