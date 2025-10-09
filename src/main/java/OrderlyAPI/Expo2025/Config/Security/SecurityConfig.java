@@ -70,6 +70,12 @@ public class SecurityConfig {
                         .requestMatchers("/apiFactura/**").authenticated()
                         .requestMatchers("/apiHistorialPedido/**").authenticated()
 
+
+                        // Debug endpoint (ELIMINAR EN PRODUCCIÓN)
+                        .requestMatchers("/debug/**").permitAll()
+
+                        // Todo lo demás requiere autenticación
+                        .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
