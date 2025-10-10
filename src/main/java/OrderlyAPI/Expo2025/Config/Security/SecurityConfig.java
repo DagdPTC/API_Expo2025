@@ -52,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
 
                         // APIs públicos
+                        // En SecurityConfig.java - versión completa
                         .requestMatchers("/apiReserva/**",
                                 "/apiTipoReserva/**",
                                 "/apiMesa/**",
@@ -66,7 +67,8 @@ public class SecurityConfig {
                                 "/apiPersona/**",
                                 "/apiHistorialPedido/**",
                                 "/apiUsuario/**",
-                                "/apiOfertas/**").permitAll()
+                                "/apiOfertas/**",
+                                "/apiFactura/**").permitAll()  // ← Factura como público
 
                         .requestMatchers("/apiFactura/**").authenticated()
                         .requestMatchers("/apiHistorialPedido/**").authenticated()
