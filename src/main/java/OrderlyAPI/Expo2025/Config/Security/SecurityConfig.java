@@ -65,7 +65,8 @@ public class SecurityConfig {
                                 "/apiDocumentoIdentidad/**",
                                 "/apiPersona/**",
                                 "/apiHistorialPedido/**",
-                                "/apiUsuario/**").permitAll()
+                                "/apiUsuario/**",
+                                "/apiOfertas/**").permitAll()
 
                         .requestMatchers("/apiFactura/**").authenticated()
                         .requestMatchers("/apiHistorialPedido/**").authenticated()
