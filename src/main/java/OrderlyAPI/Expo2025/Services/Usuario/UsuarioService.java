@@ -148,4 +148,10 @@ public class UsuarioService {
         }
         return e;
     }
+
+    // === NUEVO ===
+    public boolean existsByCorreo(String correo){
+        // SIN normalizar: coincide exactamente con lo almacenado
+        return repo.existsByCorreo(correo);
+    }
 }

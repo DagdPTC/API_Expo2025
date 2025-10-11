@@ -124,4 +124,16 @@ public class UsuarioController {
             ));
         }
     }
+
+    // === NUEVO: verificar existencia por correo (SIN normalizar) ===
+    @GetMapping("/exists")
+    public ResponseEntity<Map<String, Object>> exists(@RequestParam String correo) {
+        if (correo == null || correo.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "correo requerido"
+            ));
+        }
+        boolean exists = service.existsByCorreo(correo); // consulta tal cual
+        return ResponseEntity.ok(Map.of("exists", exists));
+    }
 }
