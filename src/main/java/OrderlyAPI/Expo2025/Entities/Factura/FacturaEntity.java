@@ -38,8 +38,7 @@ public class FacturaEntity {
     @JoinColumn(name = "IDPEDIDO", referencedColumnName = "IDPEDIDO")
     private PedidoEntity pedido;
 
-    // NUEVA RELACIÓN CON ESTADO FACTURA
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.EAGER)  // Cambia a EAGER para que cargue automáticamente
     @JoinColumn(name = "IDESTADOFACTURA", referencedColumnName = "IDESTADOFACTURA")
     private EstadoFacturaEntity estadoFactura;
 }

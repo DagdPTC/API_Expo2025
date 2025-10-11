@@ -2,6 +2,7 @@ package OrderlyAPI.Expo2025.Models.DTO;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,4 +26,7 @@ public class FacturaDTO {
     // NUEVO CAMPO PARA ESTADO FACTURA
     @NotNull(message = "El ID del estado de factura es requerido")
     private Long IdEstadoFactura;
+
+    @NotBlank
+    private String EstadoFactura;
 }
