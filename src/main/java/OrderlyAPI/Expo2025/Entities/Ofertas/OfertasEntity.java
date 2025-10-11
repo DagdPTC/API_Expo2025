@@ -37,10 +37,14 @@ public class OfertasEntity {
     @Column(name = "ACTIVA")
     private Boolean activa;
 
+    @Column(name = "IMAGENURL")
+    private String imagenUrl;
+
+    // Nuevo: publicId de Cloudinary para gestionar la imagen (borrar / transformar)
+    @Column(name = "PUBLICID")
+    private String publicId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "IDPLATILLO", nullable = false)  // FK
     private PlatilloEntity platillo;
 }
-
-
-
