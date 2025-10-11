@@ -48,6 +48,8 @@ public class OfertasService {
         existente.setFechaInicio(dto.getFechaInicio()); // mismo tipo en DTO y Entity
         existente.setFechaFin(dto.getFechaFin());       // mismo tipo en DTO y Entity
         existente.setActiva(dto.getActiva());
+        existente.setImagenUrl(dto.getImagenUrl());
+        existente.setPublicId(dto.getPublicId());
 
         if (dto.getIdPlatillo() != null) {
             existente.setPlatillo(entityManager.getReference(PlatilloEntity.class, dto.getIdPlatillo()));
@@ -77,6 +79,8 @@ public class OfertasService {
         entity.setFechaInicio(dto.getFechaInicio()); // ⚠️ asegúrate que en DTO también sea LocalDate
         entity.setFechaFin(dto.getFechaFin());
         entity.setActiva(dto.getActiva());
+        entity.setImagenUrl(dto.getImagenUrl());
+        entity.setPublicId(dto.getPublicId());
 
         if (dto.getIdPlatillo() != null) {
             entity.setPlatillo(entityManager.getReference(PlatilloEntity.class, dto.getIdPlatillo()));
@@ -100,6 +104,8 @@ public class OfertasService {
         dto.setFechaInicio(entity.getFechaInicio()); // mismo tipo
         dto.setFechaFin(entity.getFechaFin());
         dto.setActiva(entity.getActiva());
+        dto.setImagenUrl(entity.getImagenUrl());
+        dto.setPublicId(entity.getPublicId());
 
         if (entity.getPlatillo() != null) {
             dto.setIdPlatillo(entity.getPlatillo().getId());

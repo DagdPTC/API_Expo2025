@@ -15,7 +15,7 @@ public class OfertasEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "oferta_seq")
-    @SequenceGenerator(name = "oferta_seq", sequenceName = "OFERTA_SEQ", allocationSize = 1)
+    @SequenceGenerator(name = "oferta_seq", sequenceName = "oferta_SEQ", allocationSize = 1)
     @Column(name = "IDOFERTA")
     private Long id;
 
