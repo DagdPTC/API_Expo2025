@@ -15,10 +15,4 @@ public class OfertasDTO {
     private Boolean activa;          // mejor Boolean que Integer
     private Long idPlatillo;         // FK
 
-    @Size(max = 500, message = "La URL de la imagen no puede exceder 500 caracteres")
-    private String imagenUrl;
-
-    // Nuevo: para gestionar borrado/transformaciones en Cloudinary
-    @Size(max = 255, message = "El publicId no puede exceder 255 caracteres")
-    private String publicId;
 }
