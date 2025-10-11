@@ -4,11 +4,13 @@ import OrderlyAPI.Expo2025.Entities.Factura.FacturaEntity;
 import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
 import OrderlyAPI.Expo2025.Entities.PedidoDetalle.PedidoDetalleEntity; // <-- NUEVO
 import OrderlyAPI.Expo2025.Entities.Platillo.PlatilloEntity;
+import OrderlyAPI.Expo2025.Entities.EstadoFactura.EstadoFacturaEntity; // <-- NUEVO
 import OrderlyAPI.Expo2025.Exceptions.ExceptionDatoNoEncontrado;
 import OrderlyAPI.Expo2025.Models.DTO.FacturaDTO;
 import OrderlyAPI.Expo2025.Repositories.Factura.FacturaRepository;
 import OrderlyAPI.Expo2025.Repositories.Pedido.PedidoRepository;
 import OrderlyAPI.Expo2025.Repositories.Platillo.PlatilloRepository;
+import OrderlyAPI.Expo2025.Repositories.EstadoFactura.EstadoFacturaRepository; // <-- NUEVO
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -30,6 +32,9 @@ public class FacturaService {
     @Autowired private PedidoRepository pedidoRepo;
     @Autowired private PlatilloRepository platilloRepo;
 
+    // === NUEVO: repositorio de EstadoFactura ===
+    @Autowired private EstadoFacturaRepository estadoFacturaRepo;
+
     private static final double TIP_RATE = 0.10; // propina 10%
 
     // ===================== READ =====================
@@ -45,11 +50,20 @@ public class FacturaService {
 
         try{
             FacturaEntity e = convertirAFacturaEntity(dto);
+
             // Asociar Pedido por referencia si viene IdPedido
             if (dto.getIdPedido() != null) {
                 PedidoEntity pedRef = pedidoRepo.getReferenceById(dto.getIdPedido());
                 e.setPedido(pedRef);
             }
+
+            // === NUEVO: asociar EstadoFactura si viene IdEstadoFactura ===
+            if (dto.getIdEstadoFactura() != null) {
+                EstadoFacturaEntity estado = estadoFacturaRepo.findById(dto.getIdEstadoFactura())
+                        .orElseThrow(() -> new ExceptionDatoNoEncontrado("Estado de factura no encontrado"));
+                e.setEstadoFactura(estado);
+            }
+
             FacturaEntity guardado = repo.save(e);
             return convertirAFacturaDTO(guardado);
         }catch (Exception ex){
@@ -72,18 +86,28 @@ public class FacturaService {
      * - Recalcula Subtotal desde todas las líneas del pedido
      * - Propina = 10% del Subtotal; TotalPedido = Subtotal + Propina
      * - Aplica DescuentoPct (0..100) sobre TotalPedido y establece Total de la Factura
+     * - **NUEVO**: si viene idEstadoFactura, actualiza el estado de la factura
      */
     @Transactional
     public Map<String, Object> actualizarCompleto(Long idFactura,
                                                   Long idPedido,
                                                   Long idPlatillo,   // opcional (línea a upsert)
                                                   Long cantidad,     // opcional (>=1)
-                                                  Double descuentoPct) {
+                                                  Double descuentoPct,
+                                                  Long idEstadoFactura // <-- NUEVO (opcional)
+    ) {
 
         FacturaEntity factura = repo.findById(idFactura)
                 .orElseThrow(() -> new ExceptionDatoNoEncontrado("Factura no encontrada"));
         PedidoEntity pedido = pedidoRepo.findById(idPedido)
                 .orElseThrow(() -> new ExceptionDatoNoEncontrado("Pedido no encontrado"));
+
+        // === NUEVO: actualizar estado si viene ===
+        if (idEstadoFactura != null) {
+            EstadoFacturaEntity estado = estadoFacturaRepo.findById(idEstadoFactura)
+                    .orElseThrow(() -> new ExceptionDatoNoEncontrado("Estado de factura no encontrado"));
+            factura.setEstadoFactura(estado);
+        }
 
         // Asegurar lista de detalles inicializada
         if (pedido.getDetalles() == null) {
@@ -149,6 +173,13 @@ public class FacturaService {
         out.put("DescuentoPct", pct);
         out.put("DescuentoMonto", descMonto);
         out.put("TotalFactura", totalFac);
+
+        // === NUEVO: devolver info de estado para el front ===
+        if (factura.getEstadoFactura() != null) {
+            out.put("IdEstadoFactura", factura.getEstadoFactura().getId());
+            out.put("EstadoFactura", factura.getEstadoFactura().getEstadoFactura());
+        }
+
         return out;
     }
 
@@ -164,10 +195,6 @@ public class FacturaService {
             }
         }
         return null;
-        // Alternativa con streams (si prefieres):
-        // return detalles.stream()
-        //         .filter(d -> d.getPlatillo() != null && idPlatillo.equals(d.getPlatillo().getId()))
-        //         .findFirst().orElse(null);
     }
 
     /** Suma cantidad × precioUnitario de todas las líneas (asegurando valores válidos). */
@@ -200,6 +227,13 @@ public class FacturaService {
         e.setId(dto.getId());
         e.setDescuento(dto.getDescuento());
         e.setTotal(dto.getTotal());
+
+        // === NUEVO: mapear EstadoFactura desde DTO (si viene Id) ===
+        if (dto.getIdEstadoFactura() != null) {
+            EstadoFacturaEntity estado = estadoFacturaRepo.findById(dto.getIdEstadoFactura())
+                    .orElseThrow(() -> new ExceptionDatoNoEncontrado("Estado de factura no encontrado"));
+            e.setEstadoFactura(estado);
+        }
         return e;
     }
 
@@ -209,6 +243,12 @@ public class FacturaService {
         dto.setIdPedido(e.getPedido() != null ? e.getPedido().getId() : null);
         dto.setDescuento(e.getDescuento());
         dto.setTotal(e.getTotal());
+
+        // === NUEVO: exponer estado al front ===
+        if (e.getEstadoFactura() != null) {
+            dto.setIdEstadoFactura(e.getEstadoFactura().getId());
+            dto.setEstadoFactura(e.getEstadoFactura().getEstadoFactura());
+        }
         return dto;
     }
 }
