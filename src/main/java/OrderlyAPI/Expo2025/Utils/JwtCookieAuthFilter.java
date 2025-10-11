@@ -51,7 +51,8 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             "/apiEstadoReserva/**",
             "/apiPlatillo/**",
             "/apiCategoria/**",
-            "/apiFactura/**",  // ← AGREGAR ESTA LÍNEA
+            "/apiFactura/**",
+            "/apiOfertas",// ← AGREGAR ESTA LÍNEA
             "/debug/**",
             "/", "/actuator/health"
     );
