@@ -69,6 +69,8 @@ public class SecurityConfig {
                                 "/apiHistorialPedido/**",
                                 "/apiUsuario/**",
                                 "/apiOfertas/**",
+                                "/apiTipoDocumento/**",
+                                "/apiRol/**",
                                 "/apiFactura/**").permitAll()  // ← Factura como público
 
                         .requestMatchers("/apiFactura/**").authenticated()
