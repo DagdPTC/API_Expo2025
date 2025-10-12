@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface FacturaRepository extends JpaRepository<FacturaEntity, Long> {
     boolean existsByPedido_Id(Long idPedido);
     Optional<FacturaEntity> findByPedido_Id(Long idPedido);
+
+    Optional<Object> findFirstByPedidoId(Long idPedido);
 }
