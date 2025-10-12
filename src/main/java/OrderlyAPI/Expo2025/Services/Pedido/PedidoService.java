@@ -2,6 +2,7 @@ package OrderlyAPI.Expo2025.Services.Pedido;
 
 import OrderlyAPI.Expo2025.Models.DTO.PedidoDTO;
 import OrderlyAPI.Expo2025.Models.DTO.PedidoItemDTO;
+import OrderlyAPI.Expo2025.Services.Factura.FacturaService; // <-- NUEVO
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -12,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -21,6 +21,9 @@ public class PedidoService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private FacturaService facturaService; // <-- NUEVO
 
     /* =========================================================
        LISTAR (paginado)  — desde tabla PEDIDO
@@ -139,7 +142,23 @@ public class PedidoService {
         List<PedidoItemDTO> compact = compactarItems(dto.getItems());
         insertarDetalle(id, compact);
 
-        return getById(id);
+        // Obtenemos el pedido actualizado para evaluar su estado
+        PedidoDTO saved = getById(id);
+
+        // ---------------------------------------------
+        // Crear factura "Sin pagar" si el pedido quedó FINALIZADO
+        // ---------------------------------------------
+        try {
+            if (isFinalizadoEstadoPedido(saved.getIdEstadoPedido())) {
+                // Crea solo si no existe para ese pedido
+                facturaService.crearFacturaSinPagarSiNoExiste(saved.getId());
+            }
+        } catch (Exception ex) {
+            // No romper el flujo del update si algo falla al crear factura
+            System.out.println("WARN: No se pudo crear factura 'Sin pagar' para pedido " + saved.getId() + ": " + ex.getMessage());
+        }
+
+        return saved;
     }
 
     /* =========================================================
@@ -169,15 +188,15 @@ public class PedidoService {
                 v = rs.getLong("IDEMPLEADO");     if (!rs.wasNull()) dto.setIdEmpleado(v);
                 v = rs.getLong("IDESTADOPEDIDO"); if (!rs.wasNull()) dto.setIdEstadoPedido(v);
 
-                java.sql.Timestamp tIni = rs.getTimestamp("HORAINICIO");
-                java.sql.Timestamp tFp  = rs.getTimestamp("FECHAPEDIDO");
+                Timestamp tIni = rs.getTimestamp("HORAINICIO");
+                Timestamp tFp  = rs.getTimestamp("FECHAPEDIDO");
                 if (tIni != null) {
                     dto.setFPedido(tIni.toLocalDateTime());
                 } else if (tFp != null) {
-                           dto.setFPedido(tFp.toLocalDateTime());
+                    dto.setFPedido(tFp.toLocalDateTime());
                 }
 
-                java.sql.Timestamp tFin = rs.getTimestamp("HORAFIN");
+                Timestamp tFin = rs.getTimestamp("HORAFIN");
                 if (tFin != null) dto.setHoraFin(tFin.toLocalDateTime());
 
                 dto.setObservaciones(rs.getString("OBSERVACIONES"));
@@ -280,5 +299,20 @@ public class PedidoService {
             }
         }
         return new ArrayList<>(map.values());
+    }
+
+    // ================== NUEVO: detectar si el estado es "finalizado" ==================
+    private boolean isFinalizadoEstadoPedido(Long idEstadoPedido) {
+        if (idEstadoPedido == null) return false;
+        try {
+            String nombre = jdbcTemplate.queryForObject(
+                    "SELECT ESTADOPEDIDO FROM ESTADOPEDIDO WHERE IDESTADOPEDIDO = ?",
+                    new Object[]{ idEstadoPedido },
+                    String.class
+            );
+            return nombre != null && nombre.trim().toLowerCase().contains("finaliz");
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
