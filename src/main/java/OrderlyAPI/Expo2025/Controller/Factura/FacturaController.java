@@ -63,26 +63,38 @@ public class FacturaController {
         }
     }
 
+    /**
+     * ÚNICO UPDATE (transaccional):
+     *  Body ejemplo:
+     *  {
+     *    "IdPedido": 123,
+     *    "IdPlatillo": 45,       // opcional
+     *    "Cantidad": 2,          // opcional (>=1)
+     *    "DescuentoPct": 10.0    // 0..100 (0 permitido)
+     *  }
+     */
     @PutMapping("/actualizarCompleto/{idFactura}")
     public ResponseEntity<APIResponse<Map<String, Object>>> actualizarCompleto(
             @PathVariable Long idFactura,
             @RequestBody Map<String, Object> body) {
 
-        Long idPedido        = toLong(body.get("IdPedido"),        toLong(body.get("idPedido"),        null));
-        Long idPlatillo      = toLong(body.get("IdPlatillo"),      toLong(body.get("idPlatillo"),      null));
-        Long cantidad        = toLong(body.get("Cantidad"),        toLong(body.get("cantidad"),        null));
-        Double descPct       = toDouble(body.get("DescuentoPct"),  toDouble(body.get("descuentoPct"),  0.0));
-        Long idEstadoFactura = toLong(body.get("IdEstadoFactura"), toLong(body.get("idEstadoFactura"), null)); // NUEVO
+        Long idPedido   = toLong(body.get("IdPedido"), toLong(body.get("idPedido"), null));
+        Long idPlatillo = toLong(body.get("IdPlatillo"), toLong(body.get("idPlatillo"), null));
+        Long cantidad   = toLong(body.get("Cantidad"),   toLong(body.get("cantidad"),   null));
+        Double descPct  = toDouble(body.get("DescuentoPct"), toDouble(body.get("descuentoPct"), 0.0));
 
         if (idPedido == null) {
             return ResponseEntity.badRequest()
                     .body(new APIResponse<>(false, "IdPedido es requerido", null));
         }
 
-        Map<String, Object> result = service.actualizarCompleto(
-                idFactura, idPedido, idPlatillo, cantidad, descPct, idEstadoFactura // <-- NUEVO arg
-        );
-        return ResponseEntity.ok(new APIResponse<>(true, "Actualización completa OK", result));
+        try {
+            Map<String, Object> result = service.actualizarCompleto(idFactura, idPedido, idPlatillo, cantidad, descPct);
+            return ResponseEntity.ok(new APIResponse<>(true, "Actualización completa OK", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new APIResponse<>(false, "Error en actualización: " + e.getMessage(), null));
+        }
     }
 
     // Helpers para castear sin DTO adicional

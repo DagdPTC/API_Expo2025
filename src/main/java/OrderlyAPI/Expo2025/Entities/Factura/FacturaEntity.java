@@ -1,18 +1,14 @@
 package OrderlyAPI.Expo2025.Entities.Factura;
 
-import OrderlyAPI.Expo2025.Entities.Empleado.EmpleadoEntity;
 import OrderlyAPI.Expo2025.Entities.EstadoFactura.EstadoFacturaEntity;
 import OrderlyAPI.Expo2025.Entities.HistorialPedido.HistorialPedidoEntity;
 import OrderlyAPI.Expo2025.Entities.Pedido.PedidoEntity;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -26,19 +22,20 @@ public class FacturaEntity {
     private Long Id;
 
     @Column(name = "DESCUENTO")
-    private double Descuento;
+    private Double descuento;
 
     @Column(name = "TOTAL")
-    private double Total;
+    private Double total;
 
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL)
-    private List<HistorialPedidoEntity> factura;
+    private List<HistorialPedidoEntity> historialPedidos;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IDPEDIDO", referencedColumnName = "IDPEDIDO")
     private PedidoEntity pedido;
 
-    @ManyToOne(fetch = FetchType.EAGER)  // Cambia a EAGER para que cargue automáticamente
-    @JoinColumn(name = "IDESTADOFACTURA", referencedColumnName = "IDESTADOFACTURA")
+    // RELACIÓN CON ESTADO FACTURA - CORREGIDA
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "IDESTADOFACTURA", referencedColumnName = "IDESTADOFACTURA", nullable = false)
     private EstadoFacturaEntity estadoFactura;
 }

@@ -108,7 +108,7 @@ public class PedidoController {
         }
 
         try{
-            PedidoDTO pedidoActualizado = service.modificarPedido(id, pedido); // <-- nombre real del service
+            PedidoDTO pedidoActualizado = service.modificarPedido(id, pedido);
             return ResponseEntity.ok(pedidoActualizado);
         }
         catch (ExceptionDatoNoEncontrado e){
@@ -128,10 +128,57 @@ public class PedidoController {
         }
     }
 
+    /**
+     * Endpoint para finalizar un pedido y generar factura automáticamente
+     */
+    @PutMapping("/finalizarPedido/{id}")
+    public ResponseEntity<?> finalizarPedido(@PathVariable Long id) {
+        try {
+            // Verificar si el pedido existe
+            PedidoDTO pedidoExistente = service.getById(id);
+
+            // Finalizar pedido y generar factura
+            PedidoDTO pedidoFinalizado = service.finalizarPedido(id);
+
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "message", "Pedido finalizado y factura generada exitosamente",
+                    "data", pedidoFinalizado
+            ));
+
+        } catch (ExceptionDatoNoEncontrado e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("status", "Not Found", "message", "Pedido no encontrado"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("status", "Error", "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("status", "Error", "message", "Error al finalizar el pedido", "detail", e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint para verificar si un pedido tiene factura
+     */
+    @GetMapping("/{id}/tieneFactura")
+    public ResponseEntity<?> verificarFactura(@PathVariable Long id) {
+        try {
+            boolean tieneFactura = service.tieneFactura(id);
+            return ResponseEntity.ok(Map.of(
+                    "idPedido", id,
+                    "tieneFactura", tieneFactura
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("status", "Error", "message", "Error al verificar factura"));
+        }
+    }
+
     @DeleteMapping("/eliminarPedido/{id}")
     public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id){
         try{
-            if (!service.eliminarPedido(id)){ // <-- nombre real del service
+            if (!service.eliminarPedido(id)){
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .header("X-Mensaje-Error", "Pedido no encontrado")
                         .body(Map.of(
