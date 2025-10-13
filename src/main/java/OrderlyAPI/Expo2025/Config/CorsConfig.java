@@ -16,6 +16,7 @@ public class CorsConfig {
 
         // Orígenes permitidos
         c.setAllowedOriginPatterns(List.of(
+                "https://localhost",
                 "http://localhost",
                 "http://localhost:*",
                 "http://127.0.0.1",
