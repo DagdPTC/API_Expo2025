@@ -13,7 +13,7 @@ public class FacturaDTO {
 
     private Long IdPedido;
 
-    // Ahora 0.00 permitido (porque el descuento real lo calculamos desde porcentaje)
+    // 0.00 permitido
     @DecimalMin(value = "0.00", message = "El descuento no puede ser negativo")
     @DecimalMax(value = "99999999.99", message = "El descuento debe ser menor de 99999999.99")
     private double Descuento;
@@ -22,7 +22,10 @@ public class FacturaDTO {
     @DecimalMax(value = "99999999.99", message = "El total debe ser menor de 99999999.99")
     private double Total;
 
-    // NUEVO CAMPO PARA ESTADO FACTURA
+    // ID del estado de factura
     @NotNull(message = "El ID del estado de factura es requerido")
     private Long IdEstadoFactura;
+
+    // NOMBRE del estado de factura (lo devolvemos para el frontend)
+    private String EstadoFactura;
 }
