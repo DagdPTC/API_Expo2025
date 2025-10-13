@@ -48,21 +48,6 @@ public class FacturaController {
         }
     }
 
-    @PostMapping("/crearDesdePedido")
-    public ResponseEntity<APIResponse<FacturaDTO>> crearDesdePedido(@RequestBody Map<String, Object> body){
-        Long idPedido        = toLong(body.get("IdPedido"),        toLong(body.get("idPedido"),        null));
-        Long idEstadoFactura = toLong(body.get("IdEstadoFactura"), toLong(body.get("idEstadoFactura"), null));
-
-        if (idPedido == null) {
-            return ResponseEntity.badRequest()
-                    .body(new APIResponse<>(false, "IdPedido es requerido", null));
-        }
-
-        FacturaDTO dto = service.crearDesdePedido(idPedido, idEstadoFactura);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new APIResponse<>(true, "Factura creada desde pedido", dto));
-    }
-
     @DeleteMapping("/eliminarFactura/{id}")
     public ResponseEntity<APIResponse<Map<String,Object>>> eliminar(@PathVariable Long id){
         try{
@@ -87,7 +72,7 @@ public class FacturaController {
         Long idPlatillo      = toLong(body.get("IdPlatillo"),      toLong(body.get("idPlatillo"),      null));
         Long cantidad        = toLong(body.get("Cantidad"),        toLong(body.get("cantidad"),        null));
         Double descPct       = toDouble(body.get("DescuentoPct"),  toDouble(body.get("descuentoPct"),  0.0));
-        Long idEstadoFactura = toLong(body.get("IdEstadoFactura"), toLong(body.get("idEstadoFactura"), null));
+        Long idEstadoFactura = toLong(body.get("IdEstadoFactura"), toLong(body.get("idEstadoFactura"), null)); // NUEVO
 
         if (idPedido == null) {
             return ResponseEntity.badRequest()
@@ -95,12 +80,12 @@ public class FacturaController {
         }
 
         Map<String, Object> result = service.actualizarCompleto(
-                idFactura, idPedido, idPlatillo, cantidad, descPct, idEstadoFactura
+                idFactura, idPedido, idPlatillo, cantidad, descPct, idEstadoFactura // <-- NUEVO arg
         );
         return ResponseEntity.ok(new APIResponse<>(true, "Actualización completa OK", result));
     }
 
-    // Helpers
+    // Helpers para castear sin DTO adicional
     private Long toLong(Object a, Long defVal) {
         try {
             if (a == null) return defVal;
