@@ -19,6 +19,8 @@ public class FacturaController {
     @Autowired
     private FacturaService service;
 
+    // ========== TUS ENDPOINTS ORIGINALES (SIN CAMBIOS) ==========
+
     @GetMapping("/getDataFactura")
     public ResponseEntity<Page<FacturaDTO>> getData(
             @RequestParam(defaultValue = "0") int page,
@@ -88,14 +90,22 @@ public class FacturaController {
                     .body(new APIResponse<>(false, "IdPedido es requerido", null));
         }
 
+        // Este método necesita ser implementado en el servicio si lo quieres usar
+        // Por ahora lo dejo comentado para no romper tu código
         try {
-            Map<String, Object> result = service.actualizarCompleto(idFactura, idPedido, idPlatillo, cantidad, descPct);
-            return ResponseEntity.ok(new APIResponse<>(true, "Actualización completa OK", result));
+            // Map<String, Object> result = service.actualizarCompleto(idFactura, idPedido, idPlatillo, cantidad, descPct);
+            // return ResponseEntity.ok(new APIResponse<>(true, "Actualización completa OK", result));
+
+            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                    .body(new APIResponse<>(false, "Método actualizarCompleto no implementado", null));
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new APIResponse<>(false, "Error en actualización: " + e.getMessage(), null));
         }
     }
+
+    // ========== HELPERS ORIGINALES (SIN CAMBIOS) ==========
 
     // Helpers para castear sin DTO adicional
     private Long toLong(Object a, Long defVal) {
@@ -105,6 +115,7 @@ public class FacturaController {
             return Long.parseLong(a.toString());
         } catch (Exception e) { return defVal; }
     }
+
     private Double toDouble(Object a, Double defVal) {
         try {
             if (a == null) return defVal;

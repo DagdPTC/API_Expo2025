@@ -15,11 +15,12 @@ import java.util.List;
 @Table(name = "FACTURA")
 @Getter @Setter @ToString @EqualsAndHashCode
 public class FacturaEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "factura_seq")
     @SequenceGenerator(name = "factura_seq", sequenceName = "factura_seq", allocationSize = 1)
     @Column(name = "IDFACTURA")
-    private Long Id;
+    private Long id;
 
     @Column(name = "DESCUENTO")
     private Double descuento;
@@ -27,15 +28,23 @@ public class FacturaEntity {
     @Column(name = "TOTAL")
     private Double total;
 
-    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL)
-    private List<HistorialPedidoEntity> historialPedidos;
+    // Campos para IDs directos (sin relación)
+    @Transient
+    private Long idPedido;
 
+    @Transient
+    private Long idEstadoFactura;
+
+    // Relación con Pedido
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "IDPEDIDO", referencedColumnName = "IDPEDIDO")
+    @JoinColumn(name = "IDPEDIDO", referencedColumnName = "IDPEDIDO", nullable = false)
     private PedidoEntity pedido;
 
-    // RELACIÓN CON ESTADO FACTURA - CORREGIDA
+    // Relación con EstadoFactura
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IDESTADOFACTURA", referencedColumnName = "IDESTADOFACTURA", nullable = false)
     private EstadoFacturaEntity estadoFactura;
+
+    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL)
+    private List<HistorialPedidoEntity> historialPedidos;
 }
