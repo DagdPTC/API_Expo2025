@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -32,10 +34,10 @@ public class PedidoService {
         if (page < 0) page = 0;
 
         long total = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM PEDIDO", Long.class);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "IDPEDIDO"));
 
         String sql =
-                "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, HORAFIN, IDESTADOPEDIDO, " +
+                "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, HORAINICIO, HORAFIN, IDESTADOPEDIDO, " +
                         "       OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO " +
                         "FROM PEDIDO " +
                         "ORDER BY IDPEDIDO DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
@@ -58,7 +60,7 @@ public class PedidoService {
        ========================================================= */
     public PedidoDTO getById(Long id) {
         String sql =
-                "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, HORAFIN, IDESTADOPEDIDO, " +
+                "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, HORAINICIO, HORAFIN, IDESTADOPEDIDO, " +
                         "       OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO " +
                         "FROM PEDIDO WHERE IDPEDIDO = ?";
         List<PedidoDTO> list = jdbcTemplate.query(sql, new Object[]{ id }, pedidoRowMapper());
@@ -75,14 +77,15 @@ public class PedidoService {
     public PedidoDTO createPedido(PedidoDTO dto) {
         validarDto(dto, true);
 
-        // Tomamos ID de la secuencia (aunque hay trigger, esto nos da el ID para insertar detalle)
+        // Tomamos ID de la secuencia
         Long idNuevo = jdbcTemplate.queryForObject("SELECT PEDIDO_SEQ.NEXTVAL FROM DUAL", Long.class);
 
+        // CORREGIDO: Incluir HORAINICIO en el INSERT
         String insert =
                 "INSERT INTO PEDIDO " +
-                        "(IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, HORAINICIO, IDESTADOPEDIDO, " +
+                        "(IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, HORAINICIO, HORAFIN, IDESTADOPEDIDO, " +
                         " OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO) " +
-                        "VALUES (?, ?, ?, ?, SYSDATE, SYSDATE, ?, ?, ?, ?, ?)";
+                        "VALUES (?, ?, ?, ?, SYSDATE, SYSDATE, NULL, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(
                 insert,
@@ -137,7 +140,7 @@ public class PedidoService {
         );
         if (rows == 0) throw new RuntimeException("Pedido no encontrado");
 
-        // Regenerar detalle para evitar ORA-00001 (UQ_PedidoDet_Linea)
+        // Regenerar detalle
         jdbcTemplate.update("DELETE FROM PEDIDODETALLE WHERE IDPEDIDO = ?", id);
         List<PedidoItemDTO> compact = compactarItems(dto.getItems());
         insertarDetalle(id, compact);
@@ -146,16 +149,24 @@ public class PedidoService {
     }
 
     /* =========================================================
-       FINALIZAR PEDIDO Y GENERAR FACTURA AUTOMÁTICA
+       FINALIZAR PEDIDO Y GENERAR FACTURA AUTOMÁTICA - CORREGIDO
        ========================================================= */
     @Transactional
     public PedidoDTO finalizarPedido(Long idPedido) {
         try {
-            // 1. Obtener el pedido actual
-            PedidoDTO pedido = getById(idPedido);
+            System.out.println("=== INICIANDO FINALIZAR PEDIDO ID: " + idPedido + " ===");
 
-            // 2. Verificar que el pedido no esté ya finalizado
-            if (pedido.getHoraFin() != null) {
+            // 1. Verificar que el pedido existe
+            String checkSql = "SELECT COUNT(*) FROM PEDIDO WHERE IDPEDIDO = ?";
+            Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, idPedido);
+            if (count == null || count == 0) {
+                throw new RuntimeException("Pedido no encontrado en la base de datos");
+            }
+
+            // 2. Verificar que no esté ya finalizado
+            String checkFinalizadoSql = "SELECT HORAFIN FROM PEDIDO WHERE IDPEDIDO = ?";
+            Timestamp horaFinExistente = jdbcTemplate.queryForObject(checkFinalizadoSql, Timestamp.class, idPedido);
+            if (horaFinExistente != null) {
                 throw new RuntimeException("El pedido ya está finalizado");
             }
 
@@ -172,34 +183,57 @@ public class PedidoService {
             if (rowsUpdated == 0) {
                 throw new RuntimeException("No se pudo actualizar el pedido");
             }
+            System.out.println("✅ Pedido actualizado correctamente");
 
             // 5. Generar factura automáticamente con estado "Sin pagar" (ID=1)
-            generarFacturaAutomatica(pedido);
+            System.out.println("📋 Generando factura automática...");
+            generarFacturaAutomatica(idPedido);
+            System.out.println("✅ Factura generada correctamente");
 
-            // 6. Obtener el pedido actualizado con la factura generada
-            return getById(idPedido);
+            // 6. Obtener el pedido actualizado
+            PedidoDTO pedidoActualizado = getById(idPedido);
+            System.out.println("=== FINALIZAR PEDIDO COMPLETADO ===");
+
+            return pedidoActualizado;
 
         } catch (Exception e) {
+            System.err.println("❌ ERROR al finalizar pedido: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error al finalizar pedido: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Genera una factura automáticamente para un pedido finalizado
+     * Genera una factura automáticamente para un pedido finalizado - CORREGIDO
      */
-    private void generarFacturaAutomatica(PedidoDTO pedido) {
+    private void generarFacturaAutomatica(Long idPedido) {
         try {
+            System.out.println("🔄 Generando factura para pedido: " + idPedido);
+
+            // Obtener datos del pedido para la factura
+            String sqlPedido = "SELECT TOTALPEDIDO FROM PEDIDO WHERE IDPEDIDO = ?";
+            Double totalPedido = jdbcTemplate.queryForObject(sqlPedido, Double.class, idPedido);
+
+            if (totalPedido == null) {
+                throw new RuntimeException("No se pudo obtener el total del pedido");
+            }
+
             // Crear DTO de factura
             FacturaDTO facturaDTO = new FacturaDTO();
-            facturaDTO.setIdPedido(pedido.getId());
+            facturaDTO.setIdPedido(idPedido);
             facturaDTO.setDescuento(0.0); // Sin descuento por defecto
-            facturaDTO.setTotal(pedido.getTotalPedido()); // Usar el total del pedido
+            facturaDTO.setTotal(totalPedido); // Usar el total del pedido
             facturaDTO.setIdEstadoFactura(1L); // 1 = "Sin pagar"
 
+            System.out.println("📄 Datos factura - Pedido: " + idPedido + ", Total: " + totalPedido);
+
             // Crear la factura usando el servicio existente
-            facturaService.createFacturas(facturaDTO);
+            FacturaDTO facturaCreada = facturaService.createFacturas(facturaDTO);
+            System.out.println("✅ Factura creada con ID: " + facturaCreada.getId());
 
         } catch (Exception e) {
+            System.err.println("❌ ERROR al generar factura automática: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error al generar factura automática: " + e.getMessage(), e);
         }
     }
@@ -224,7 +258,7 @@ public class PedidoService {
     }
 
     /* =========================================================
-       HELPERS
+       HELPERS - CORREGIDOS
        ========================================================= */
 
     private RowMapper<PedidoDTO> pedidoRowMapper() {
@@ -240,7 +274,18 @@ public class PedidoService {
                 v = rs.getLong("IDEMPLEADO");     if (!rs.wasNull()) dto.setIdEmpleado(v);
                 v = rs.getLong("IDESTADOPEDIDO"); if (!rs.wasNull()) dto.setIdEstadoPedido(v);
 
-                // Mapear HoraFin
+                // CORREGIDO: Mapear todas las fechas
+                java.sql.Timestamp fechaPedido = rs.getTimestamp("FECHAPEDIDO");
+                if (fechaPedido != null) {
+                    dto.setFPedido(fechaPedido.toLocalDateTime());
+                }
+
+                java.sql.Timestamp horaInicio = rs.getTimestamp("HORAINICIO");
+                if (horaInicio != null) {
+                    // Si necesitas mapear HoraInicio a otro campo, lo puedes hacer aquí
+                    System.out.println("HoraInicio: " + horaInicio.toLocalDateTime());
+                }
+
                 java.sql.Timestamp horaFin = rs.getTimestamp("HORAFIN");
                 if (horaFin != null) {
                     dto.setHoraFin(horaFin.toLocalDateTime());

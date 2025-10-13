@@ -33,7 +33,7 @@ public class FacturaService {
     @Autowired private PedidoRepository pedidoRepo;
     @Autowired private PlatilloRepository platilloRepo;
     @Autowired private EstadoFacturaRepository estadoFacturaRepo;
-    @Autowired private JdbcTemplate jdbcTemplate; // AÑADIDO JdbcTemplate
+    @Autowired private JdbcTemplate jdbcTemplate;
 
     private static final double TIP_RATE = 0.10; // propina 10%
 
@@ -44,34 +44,87 @@ public class FacturaService {
         return factura.map(this::convertirAFacturaDTO);
     }
 
-    // ===================== CREATE =====================
+    // ===================== CREATE - COMPLETAMENTE CORREGIDO =====================
     public FacturaDTO createFacturas(@Valid FacturaDTO dto){
         if (dto == null) throw new IllegalArgumentException("La factura no puede ser nula");
 
         try{
+            System.out.println("🔄 [FACTURA SERVICE] Iniciando creación de factura...");
+            System.out.println("📋 Datos recibidos - PedidoID: " + dto.getIdPedido() +
+                    ", Total: " + dto.getTotal() +
+                    ", EstadoFacturaID: " + dto.getIdEstadoFactura());
+
             // Verificar si ya existe una factura para este pedido
             if (dto.getIdPedido() != null && existeFacturaParaPedido(dto.getIdPedido())) {
-                throw new RuntimeException("Ya existe una factura para este pedido");
+                String errorMsg = "Ya existe una factura para el pedido ID: " + dto.getIdPedido();
+                System.err.println("❌ " + errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
+
+            // Verificar que el pedido existe
+            if (dto.getIdPedido() != null) {
+                boolean pedidoExiste = pedidoRepo.existsById(dto.getIdPedido());
+                if (!pedidoExiste) {
+                    String errorMsg = "El pedido con ID: " + dto.getIdPedido() + " no existe";
+                    System.err.println("❌ " + errorMsg);
+                    throw new RuntimeException(errorMsg);
+                }
+                System.out.println("✅ Pedido validado: " + dto.getIdPedido());
+            }
+
+            // Verificar que el estado de factura existe
+            if (dto.getIdEstadoFactura() != null) {
+                boolean estadoExiste = estadoFacturaRepo.existsById(dto.getIdEstadoFactura());
+                if (!estadoExiste) {
+                    String errorMsg = "El estado de factura con ID: " + dto.getIdEstadoFactura() + " no existe";
+                    System.err.println("❌ " + errorMsg);
+                    throw new RuntimeException(errorMsg);
+                }
+                System.out.println("✅ Estado factura validado: " + dto.getIdEstadoFactura());
             }
 
             FacturaEntity e = convertirAFacturaEntity(dto);
 
             // Asociar Pedido por referencia si viene IdPedido
             if (dto.getIdPedido() != null) {
-                PedidoEntity pedRef = pedidoRepo.getReferenceById(dto.getIdPedido());
-                e.setPedido(pedRef);
+                try {
+                    PedidoEntity pedRef = pedidoRepo.findById(dto.getIdPedido())
+                            .orElseThrow(() -> new RuntimeException("Pedido no encontrado con ID: " + dto.getIdPedido()));
+                    e.setPedido(pedRef);
+                    System.out.println("✅ Pedido asociado: " + dto.getIdPedido());
+                } catch (Exception ex) {
+                    System.err.println("❌ Error al asociar pedido: " + ex.getMessage());
+                    throw new RuntimeException("Error al asociar pedido: " + ex.getMessage());
+                }
             }
 
             // Asociar EstadoFactura por referencia
             if (dto.getIdEstadoFactura() != null) {
-                EstadoFacturaEntity estadoRef = estadoFacturaRepo.getReferenceById(dto.getIdEstadoFactura());
-                e.setEstadoFactura(estadoRef);
+                try {
+                    EstadoFacturaEntity estadoRef = estadoFacturaRepo.findById(dto.getIdEstadoFactura())
+                            .orElseThrow(() -> new RuntimeException("Estado factura no encontrado con ID: " + dto.getIdEstadoFactura()));
+                    e.setEstadoFactura(estadoRef);
+                    System.out.println("✅ Estado factura asociado: " + dto.getIdEstadoFactura());
+                } catch (Exception ex) {
+                    System.err.println("❌ Error al asociar estado factura: " + ex.getMessage());
+                    throw new RuntimeException("Error al asociar estado factura: " + ex.getMessage());
+                }
             }
 
+            System.out.println("💾 Guardando factura en base de datos...");
             FacturaEntity guardado = repo.save(e);
-            return convertirAFacturaDTO(guardado);
-        }catch (Exception ex){
-            log.error("Error al registrar factura: {}", ex.getMessage());
+            System.out.println("✅ Factura creada exitosamente con ID: " + guardado.getId());
+
+            FacturaDTO resultado = convertirAFacturaDTO(guardado);
+            System.out.println("🎉 [FACTURA SERVICE] Creación de factura completada - ID: " + resultado.getId());
+
+            return resultado;
+
+        } catch (Exception ex){
+            System.err.println("❌ [FACTURA SERVICE] ERROR CRÍTICO al registrar factura:");
+            System.err.println("   - Mensaje: " + ex.getMessage());
+            System.err.println("   - Causa: " + (ex.getCause() != null ? ex.getCause().getMessage() : "N/A"));
+            ex.printStackTrace();
             throw new RuntimeException("Error al registrar la factura: " + ex.getMessage());
         }
     }
@@ -176,9 +229,16 @@ public class FacturaService {
      * Verifica si ya existe una factura para un pedido
      */
     private boolean existeFacturaParaPedido(Long idPedido) {
-        String sql = "SELECT COUNT(*) FROM FACTURA WHERE IDPEDIDO = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, idPedido);
-        return count != null && count > 0;
+        try {
+            String sql = "SELECT COUNT(*) FROM FACTURA WHERE IDPEDIDO = ?";
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, idPedido);
+            boolean existe = count != null && count > 0;
+            System.out.println("🔍 Verificando factura existente para pedido " + idPedido + ": " + (existe ? "EXISTE" : "NO EXISTE"));
+            return existe;
+        } catch (Exception e) {
+            System.err.println("❌ Error al verificar factura existente: " + e.getMessage());
+            return false;
+        }
     }
 
     /** Busca una línea por IdPlatillo en la lista (null si no existe). */
