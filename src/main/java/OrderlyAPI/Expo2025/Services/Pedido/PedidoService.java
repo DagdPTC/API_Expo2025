@@ -2,7 +2,6 @@ package OrderlyAPI.Expo2025.Services.Pedido;
 
 import OrderlyAPI.Expo2025.Models.DTO.PedidoDTO;
 import OrderlyAPI.Expo2025.Models.DTO.PedidoItemDTO;
-import OrderlyAPI.Expo2025.Services.Factura.FacturaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -13,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -21,13 +22,9 @@ public class PedidoService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private FacturaService facturaService;
-
     /* =========================================================
-       TUS MÉTODOS ORIGINALES (SIN CAMBIOS)
+       LISTAR (paginado)  — desde tabla PEDIDO
        ========================================================= */
-
     public Page<PedidoDTO> getDataPedido(int page, int size) {
         if (size <= 0) size = 10;
         if (page < 0) page = 0;
@@ -54,6 +51,9 @@ public class PedidoService {
         return new PageImpl<>(content, pageable, total);
     }
 
+    /* =========================================================
+       OBTENER POR ID
+       ========================================================= */
     public PedidoDTO getById(Long id) {
         String sql =
                 "SELECT IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, HORAINICIO, HORAFIN, IDESTADOPEDIDO, " +
@@ -66,17 +66,20 @@ public class PedidoService {
         return dto;
     }
 
+    /* =========================================================
+       CREAR
+       ========================================================= */
     @Transactional
     public PedidoDTO createPedido(PedidoDTO dto) {
         validarDto(dto, true);
 
+        // Tomamos ID de la secuencia (aunque hay trigger, esto nos da el ID para insertar detalle)
         Long idNuevo = jdbcTemplate.queryForObject("SELECT PEDIDO_SEQ.NEXTVAL FROM DUAL", Long.class);
 
         String insert =
-                "INSERT INTO PEDIDO " +
-                        "(IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO, HORAINICIO, HORAFIN, IDESTADOPEDIDO, " +
-                        " OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO) " +
-                        "VALUES (?, ?, ?, ?, SYSDATE, SYSDATE, NULL, ?, ?, ?, ?, ?)";
+                "INSERT INTO PEDIDO (IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO," +
+                        "                    HORAINICIO, IDESTADOPEDIDO, OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO)\n" +
+                        "VALUES (?, ?, ?, ?, SYSDATE, SYSDATE, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(
                 insert,
@@ -97,6 +100,9 @@ public class PedidoService {
         return getById(idNuevo);
     }
 
+    /* =========================================================
+       MODIFICAR
+       ========================================================= */
     @Transactional
     public PedidoDTO modificarPedido(Long id, PedidoDTO dto) {
         if (id == null) throw new IllegalArgumentException("ID de pedido requerido");
@@ -128,6 +134,7 @@ public class PedidoService {
         );
         if (rows == 0) throw new RuntimeException("Pedido no encontrado");
 
+        // Regenerar detalle para evitar ORA-00001 (UQ_PedidoDet_Linea)
         jdbcTemplate.update("DELETE FROM PEDIDODETALLE WHERE IDPEDIDO = ?", id);
         List<PedidoItemDTO> compact = compactarItems(dto.getItems());
         insertarDetalle(id, compact);
@@ -135,6 +142,9 @@ public class PedidoService {
         return getById(id);
     }
 
+    /* =========================================================
+       ELIMINAR
+       ========================================================= */
     @Transactional
     public boolean eliminarPedido(Long id) {
         jdbcTemplate.update("DELETE FROM PEDIDODETALLE WHERE IDPEDIDO = ?", id);
@@ -143,86 +153,7 @@ public class PedidoService {
     }
 
     /* =========================================================
-       MÉTODOS NUEVOS PARA FACTURA AUTOMÁTICA
-       ========================================================= */
-
-    @Transactional
-    public PedidoDTO finalizarPedido(Long idPedido) {
-        try {
-            System.out.println("=== 🚀 INICIANDO FINALIZAR PEDIDO ID: " + idPedido + " ===");
-
-            // 1. Verificar que el pedido existe
-            PedidoDTO pedido = getById(idPedido);
-            System.out.println("✅ Pedido encontrado: " + pedido.getId());
-
-            // 2. Verificar que no esté ya finalizado
-            if (pedido.getHoraFin() != null) {
-                throw new RuntimeException("El pedido ya está finalizado");
-            }
-            System.out.println("✅ Pedido no está finalizado");
-
-            // 3. Verificar si ya tiene factura
-            if (tieneFactura(idPedido)) {
-                throw new RuntimeException("El pedido ya tiene una factura generada");
-            }
-            System.out.println("✅ Pedido no tiene factura previa");
-
-            // 4. Actualizar el pedido: establecer horaFin y cambiar estado a "Entregado" (ID=3)
-            String updatePedido = "UPDATE PEDIDO SET HORAFIN = SYSDATE, IDESTADOPEDIDO = 3 WHERE IDPEDIDO = ?";
-            int rowsUpdated = jdbcTemplate.update(updatePedido, idPedido);
-
-            if (rowsUpdated == 0) {
-                throw new RuntimeException("No se pudo actualizar el pedido");
-            }
-            System.out.println("✅ Pedido actualizado correctamente (HoraFin + Estado=3)");
-
-            // 5. Generar factura automáticamente con estado "Sin pagar" (ID=1)
-            System.out.println("📋 Generando factura automática...");
-            generarFacturaAutomatica(pedido);
-            System.out.println("✅ Factura generada correctamente");
-
-            // 6. Obtener el pedido actualizado
-            PedidoDTO pedidoActualizado = getById(idPedido);
-            System.out.println("=== 🎉 FINALIZAR PEDIDO COMPLETADO ===");
-
-            return pedidoActualizado;
-
-        } catch (Exception e) {
-            System.err.println("❌ ERROR al finalizar pedido: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error al finalizar pedido: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Genera una factura automáticamente para un pedido finalizado
-     */
-    private void generarFacturaAutomatica(PedidoDTO pedido) {
-        try {
-            System.out.println("🔄 Generando factura automática para pedido: " + pedido.getId());
-
-            // Usar FacturaService para crear la factura
-            facturaService.generarFacturaAutomaticaDesdePedido(pedido);
-            System.out.println("✅ Factura generada exitosamente");
-
-        } catch (Exception e) {
-            System.err.println("❌ ERROR al generar factura automática: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error al generar factura automática: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Verifica si un pedido tiene factura
-     */
-    public boolean tieneFactura(Long idPedido) {
-        String sql = "SELECT COUNT(*) FROM FACTURA WHERE IDPEDIDO = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, idPedido);
-        return count != null && count > 0;
-    }
-
-    /* =========================================================
-       TUS HELPERS ORIGINALES (SIN CAMBIOS)
+       HELPERS
        ========================================================= */
 
     private RowMapper<PedidoDTO> pedidoRowMapper() {
@@ -238,11 +169,16 @@ public class PedidoService {
                 v = rs.getLong("IDEMPLEADO");     if (!rs.wasNull()) dto.setIdEmpleado(v);
                 v = rs.getLong("IDESTADOPEDIDO"); if (!rs.wasNull()) dto.setIdEstadoPedido(v);
 
-                // Mapear HoraFin
-                java.sql.Timestamp horaFin = rs.getTimestamp("HORAFIN");
-                if (horaFin != null) {
-                    dto.setHoraFin(horaFin.toLocalDateTime());
+                java.sql.Timestamp tIni = rs.getTimestamp("HORAINICIO");
+                java.sql.Timestamp tFp  = rs.getTimestamp("FECHAPEDIDO");
+                if (tIni != null) {
+                    dto.setFPedido(tIni.toLocalDateTime());
+                } else if (tFp != null) {
+                           dto.setFPedido(tFp.toLocalDateTime());
                 }
+
+                java.sql.Timestamp tFin = rs.getTimestamp("HORAFIN");
+                if (tFin != null) dto.setHoraFin(tFin.toLocalDateTime());
 
                 dto.setObservaciones(rs.getString("OBSERVACIONES"));
                 dto.setSubtotal(rs.getDouble("SUBTOTAL"));
@@ -288,6 +224,7 @@ public class PedidoService {
         }
     }
 
+    /** Reglas mínimas: nombre, ids y al menos un item. Totales los dejamos tal como vengan (el frontend ya los calcula). */
     private void validarDto(PedidoDTO dto, boolean crear) {
         if (dto == null) throw new IllegalArgumentException("Payload requerido");
         if (dto.getNombreCliente() == null || dto.getNombreCliente().trim().isEmpty()) {
@@ -299,6 +236,9 @@ public class PedidoService {
         if (dto.getItems() == null || dto.getItems().isEmpty()) {
             throw new IllegalArgumentException("Items: Debe incluir al menos un platillo");
         }
+        // Nota: NO comparamos dto.getSubtotal()/getPropina()/getTotalPedido() con null
+        // porque en tu DTO podrían ser primitivos (double) y eso da error de compilación.
+        // Se mandan tal cual desde el frontend.
     }
 
     private String nvl(String s, String def) {
@@ -309,11 +249,16 @@ public class PedidoService {
         return (n == null) ? 0.0 : n.doubleValue();
     }
 
+    /** Valida requerido (no nulo) para IDs. */
     private Long req(Long v) {
         if (v == null) throw new IllegalArgumentException("Valor requerido");
         return v;
     }
 
+    /**
+     * Agrupa items por IdPlatillo sumando cantidades, conservando el último precio unitario no nulo.
+     * Evita violar UQ_PedidoDet_Linea (IdPedido, IdPlatillo).
+     */
     private List<PedidoItemDTO> compactarItems(List<PedidoItemDTO> items) {
         if (items == null) return Collections.emptyList();
         Map<Long, PedidoItemDTO> map = new LinkedHashMap<>();

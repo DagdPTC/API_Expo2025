@@ -25,8 +25,6 @@ public class PedidoController {
     @Autowired
     private PedidoService service;
 
-    // ========== TUS ENDPOINTS ORIGINALES (SIN CAMBIOS) ==========
-
     @GetMapping("/getDataPedido")
     public ResponseEntity<?> getData(
             @RequestParam(defaultValue = "0") int page,
@@ -43,6 +41,7 @@ public class PedidoController {
         return ResponseEntity.ok(datos);
     }
 
+    // === obtener pedido por ID ===
     @GetMapping("/getPedidoById/{id}")
     public ResponseEntity<?> getPedidoById(@PathVariable Long id) {
         try {
@@ -109,7 +108,7 @@ public class PedidoController {
         }
 
         try{
-            PedidoDTO pedidoActualizado = service.modificarPedido(id, pedido);
+            PedidoDTO pedidoActualizado = service.modificarPedido(id, pedido); // <-- nombre real del service
             return ResponseEntity.ok(pedidoActualizado);
         }
         catch (ExceptionDatoNoEncontrado e){
@@ -132,7 +131,7 @@ public class PedidoController {
     @DeleteMapping("/eliminarPedido/{id}")
     public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id){
         try{
-            if (!service.eliminarPedido(id)){
+            if (!service.eliminarPedido(id)){ // <-- nombre real del service
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .header("X-Mensaje-Error", "Pedido no encontrado")
                         .body(Map.of(
@@ -151,47 +150,6 @@ public class PedidoController {
                     "message", "Error al eliminar el Pedido",
                     "detail", e.getMessage()
             ));
-        }
-    }
-
-    // ========== ENDPOINT NUEVO PARA FINALIZAR PEDIDO ==========
-
-    @PutMapping("/finalizarPedido/{id}")
-    public ResponseEntity<?> finalizarPedido(@PathVariable Long id) {
-        try {
-            System.out.println("📞 [CONTROLLER] Llamada a finalizarPedido ID: " + id);
-
-            PedidoDTO pedidoFinalizado = service.finalizarPedido(id);
-
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "message", "Pedido finalizado y factura generada exitosamente",
-                    "data", pedidoFinalizado
-            ));
-
-        } catch (ExceptionDatoNoEncontrado e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("status", "Not Found", "message", "Pedido no encontrado"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("status", "Error", "message", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("status", "Error", "message", "Error al finalizar el pedido", "detail", e.getMessage()));
-        }
-    }
-
-    @GetMapping("/{id}/tieneFactura")
-    public ResponseEntity<?> verificarFactura(@PathVariable Long id) {
-        try {
-            boolean tieneFactura = service.tieneFactura(id);
-            return ResponseEntity.ok(Map.of(
-                    "idPedido", id,
-                    "tieneFactura", tieneFactura
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("status", "Error", "message", "Error al verificar factura"));
         }
     }
 }

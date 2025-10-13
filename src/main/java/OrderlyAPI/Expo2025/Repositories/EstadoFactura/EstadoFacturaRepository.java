@@ -9,5 +9,4 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface EstadoFacturaRepository extends JpaRepository<EstadoFacturaEntity, Long>,
         JpaSpecificationExecutor<EstadoFacturaEntity> {
-
 }
