@@ -174,7 +174,7 @@ public class PedidoService {
                 if (tIni != null) {
                     dto.setFPedido(tIni.toLocalDateTime());
                 } else if (tFp != null) {
-                           dto.setFPedido(tFp.toLocalDateTime());
+                    dto.setFPedido(tFp.toLocalDateTime());
                 }
 
                 java.sql.Timestamp tFin = rs.getTimestamp("HORAFIN");

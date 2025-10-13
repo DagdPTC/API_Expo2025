@@ -78,7 +78,7 @@ public class FacturaService {
                                                   Long idPedido,
                                                   Long idPlatillo,   // opcional (línea a upsert)
                                                   Long cantidad,     // opcional (>=1)
-                                                  Double descuentoPct) {
+                                                  Double descuentoPct, Long idEstadoFactura) {
 
         FacturaEntity factura = repo.findById(idFactura)
                 .orElseThrow(() -> new ExceptionDatoNoEncontrado("Factura no encontrada"));
