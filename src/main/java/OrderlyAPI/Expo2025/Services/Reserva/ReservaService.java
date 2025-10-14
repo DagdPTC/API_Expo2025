@@ -62,13 +62,13 @@ public class ReservaService {
 
         reservaExistente.setNomCliente(reserva.getNomCliente());
         reservaExistente.setTelefono(reserva.getTelefono());
-        reservaExistente.setMesa(reservaExistente.getMesa());
+        reservaExistente.setMesa(entityManager.getReference(MesaEntity.class, reserva.getIdMesa()));
         reservaExistente.setFReserva(reserva.getFReserva());
         reservaExistente.setHoraI(reserva.getHoraI());
         reservaExistente.setHoraF(reserva.getHoraF());
         reservaExistente.setCantidadPersonas(reserva.getCantidadPersonas());
-        reservaExistente.setTipreser(reservaExistente.getTipreser());
-        reservaExistente.setEstreser(reservaExistente.getEstreser());
+        reservaExistente.setTipreser(entityManager.getReference(TipoReservaEntity.class, reserva.getIdTipoReserva()));
+        reservaExistente.setEstreser(entityManager.getReference(EstadoReservaEntity.class, reserva.getIdEstadoReserva()));
 
         ReservaEntity reservaActualizado = repo.save(reservaExistente);
         return convertirAReservasDTO(reservaActualizado);
