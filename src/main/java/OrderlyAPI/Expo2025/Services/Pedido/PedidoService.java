@@ -79,15 +79,18 @@ public class PedidoService {
         String insert =
                 "INSERT INTO PEDIDO (IDPEDIDO, NOMBRECLIENTE, IDMESA, IDEMPLEADO, FECHAPEDIDO," +
                         "                    HORAINICIO, IDESTADOPEDIDO, OBSERVACIONES, SUBTOTAL, PROPINA, TOTALPEDIDO)\n" +
-                        "VALUES (?, ?, ?, ?, SYSDATE, SYSDATE, ?, ?, ?, ?, ?)";
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
+        LocalDateTime ahora = dto.getFPedido() != null ? dto.getFPedido() : LocalDateTime.now();
         jdbcTemplate.update(
                 insert,
                 idNuevo,
                 nvl(dto.getNombreCliente(), ""),
                 req(dto.getIdMesa()),
                 req(dto.getIdEmpleado()),
-                req(dto.getIdEstadoPedido()),
+                Timestamp.valueOf(ahora),        // FECHAPEDIDO (?)
+                Timestamp.valueOf(ahora),        // HORAINICIO (?)
+                req(dto.getIdEstadoPedido()),    // IDESTADOPEDIDO (?)
                 nvl(dto.getObservaciones(), ""),
                 toDouble(dto.getSubtotal()),
                 toDouble(dto.getPropina()),
