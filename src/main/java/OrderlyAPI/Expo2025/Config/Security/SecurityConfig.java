@@ -76,6 +76,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/apiFactura/**").authenticated()
                         .requestMatchers("/apiHistorialPedido/**").authenticated()
+                        .requestMatchers("/apiImage/**").authenticated()
 
 
                         // Debug endpoint (ELIMINAR EN PRODUCCIÓN)
