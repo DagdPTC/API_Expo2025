@@ -31,7 +31,7 @@ public class MesaController {
     @GetMapping("/getDataMesa")
     public ResponseEntity<Page<MesaDTO>> getData(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "100") int size
     ){
         if (size <= 0 || size > 50){
             ResponseEntity.badRequest().body(Map.of(
