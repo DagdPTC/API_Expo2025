@@ -10,44 +10,55 @@ import java.util.List;
 
 @Configuration
 public class CorsConfig {
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
 
-        // Orígenes permitidos
+        // === ORÍGENES PERMITIDOS ===
         c.setAllowedOriginPatterns(List.of(
-                "https://localhost:*",
-                "https://localhost",
-                "http://localhost",
                 "http://localhost:*",
-                "http://127.0.0.1",
+                "https://localhost:*",
                 "http://127.0.0.1:*",
-                "https://127.0.0.1", "https://127.0.0.1:*",
-                "http://10.0.2.2:*", "https://10.0.2.2:*",
-                "http://192.168.*:*", "https://192.168.*:*",
-                "https://orderly-api-b53514e40ebd.herokuapp.com",
+                "https://127.0.0.1:*",
+                "http://10.0.2.2:*",
+                "https://10.0.2.2:*",
+                "http://192.168.*:*",
+                "https://192.168.*:*",
                 "https://expo-tecnica-orderly-sistema-web-ve.vercel.app",
-                "capacitor://localhost",         // Capacitor
+                "https://orderly-api-b53514e40ebd.herokuapp.com",
+                "capacitor://localhost",
                 "ionic://localhost",
                 "null"
         ));
 
-        c.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
+        // === MÉTODOS PERMITIDOS ===
+        c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+
+        // === CABECERAS PERMITIDAS ===
+        c.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"
         ));
 
-        c.setAllowedHeaders(List.of("*"));
-
+        // === CABECERAS EXPUESTAS ===
         c.setExposedHeaders(List.of(
-                "Access-Control-Allow-Origin",
-                "Access-Control-Allow-Credentials",
+                "Authorization",
                 "Set-Cookie",
-                "Authorization"
+                "Access-Control-Allow-Origin",
+                "Access-Control-Allow-Credentials"
         ));
 
+        // === CREDENCIALES Y DURACIÓN ===
         c.setAllowCredentials(true);
         c.setMaxAge(3600L);
 
+        // === REGISTRO GLOBAL ===
         UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
         s.registerCorsConfiguration("/**", c);
         return s;
