@@ -26,7 +26,6 @@ public class CorsConfig {
                 "http://10.0.2.2:*", "https://10.0.2.2:*",
                 "http://192.168.*:*", "https://192.168.*:*",
                 "https://orderly-api-b53514e40ebd.herokuapp.com",
-                "https://expo-tecnica-orderly-sistema-web-ve.vercel.app",
                 "capacitor://localhost",         // Capacitor
                 "ionic://localhost",
                 "null"
